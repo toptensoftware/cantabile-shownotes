@@ -1,0 +1,5 @@
+{
+  "name": "cantabile-shownotes",
+  "private": true,
+  "workspaces": [ "markdown", "editor" ]
+}
