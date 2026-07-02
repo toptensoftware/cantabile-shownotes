@@ -25,8 +25,12 @@ jobs:
         working-directory: editor
         run: npm run build
 
+      - name: Get version
+        id: version
+        run: echo "value=$(node -p "require('./editor/package.json').version")" >> $GITHUB_OUTPUT
+
       - name: Zip dist
-        run: zip -r shownotes2.zip editor/dist
+        run: cd editor/dist && zip -r ../../shownotes2.webfolder .
 
       - name: Delete existing latest release
         run: gh release delete latest --yes --cleanup-tag || true
@@ -35,8 +39,8 @@ jobs:
 
       - name: Create release
         run: |
-          gh release create latest shownotes2.zip \
-            --title "Latest Build" \
+          gh release create latest shownotes2.webfolder \
+            --title "v${{ steps.version.outputs.value }}" \
             --notes "Built from commit ${{ github.sha }}" \
             --latest
         env:
