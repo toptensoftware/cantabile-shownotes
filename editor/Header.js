@@ -18,7 +18,7 @@ export class Header extends Component
                 $: [
                     { 
                         type: "img", 
-                        src: "/public/logo.svg",
+                        src: "./public/logo.svg",
                     },
                     config.appName,
                 ]
