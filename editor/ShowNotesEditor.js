@@ -1,7 +1,8 @@
 import { Component, css, notify } from "@codeonlyjs/core";
 import { CodeMirrorEditor } from "./CodeMirrorEditor.js";
 import { parseAndRenderShowNotes } from "@toptensoftware/cantabile-shownotes-markdown";
-import { C } from "./AppState.js";
+import { cantabile } from "./AppState.js";
+import { config } from "./config.js";
 
 export class ShowNotesEditor extends Component
 {
@@ -13,21 +14,22 @@ export class ShowNotesEditor extends Component
         })
 
         // Update to show new show notes
-        this.listen(C.showNotes, 'markdownChanged', () => {
-            this.source = C.showNotes.markdown;
+        this.listen(cantabile.showNotes, 'markdownChanged', () => {
+            this.source = cantabile.showNotes.markdown;
         });
 
         // Update states
-        this.listen(C.songStates, 'currentStateChanged', () => {
-            window.setState?.(C.songStates.currentState?.name)
+        this.listen(cantabile.songStates, 'currentStateChanged', () => {
+            window.setState?.(cantabile.songStates.currentState?.name)
         });
-        this.listen(C.songStates, 'changed', () => {
-            window.setState?.(C.songStates.currentState?.name)
-        });
-
     }
 
-    #editMode = true;
+    onMount()
+    {
+        this.source = cantabile.showNotes.markdown;
+    }
+
+    #editMode = false;
     get editMode()
     {
         return this.#editMode;
@@ -52,6 +54,7 @@ export class ShowNotesEditor extends Component
         this.#source = value;
         this.invalidate();
         this.render();
+        console.log(`Source set to ${value}`);
     }
 
     updateSource(value)
@@ -69,7 +72,7 @@ export class ShowNotesEditor extends Component
         // Save back to Cantabile (coalesc 3 second interval)
         clearTimeout(this.#saveTimeout);
         this.#saveTimeout = setTimeout(() => {
-            C.showNotes.storeMarkdown(this.#source);
+            cantabile.showNotes.storeMarkdown(this.#source);
         }, 3000);
     }
 
@@ -77,7 +80,9 @@ export class ShowNotesEditor extends Component
 
     render()
     {
-        var r = parseAndRenderShowNotes(this.#source);
+        var r = parseAndRenderShowNotes(this.#source, {
+            localAssetPrefix: (config.cantabileHost ?? "") + "/assets/",
+        });
         this.elOutput.innerHTML = r.html;
 
         const elScript = document.createElement('script')
@@ -87,7 +92,7 @@ window.setState = setState;
 })()`;
         this.elOutput.appendChild(elScript)
 
-        window.setState?.(C.songStates.currentState?.name)
+        window.setState?.(cantabile.songStates.currentState?.name)
     }
 
     static template = {

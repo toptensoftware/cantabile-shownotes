@@ -1,38 +1,45 @@
 import { Component, css, html, notify } from "@codeonlyjs/core";
-import { config } from "./config.js";
+import { cantabile } from "./AppState.js";
 
 // The main header
 export class Header extends Component
 {
+    constructor()
+    {
+        super();
+        this.listen(cantabile.song, "changed");
+        this.listen(cantabile.songStates, "changed");
+    }
+
     onEditToggle(e)
     {
         notify("editMode", e.target.checked);
+    }
+
+    get songAndStateName()
+    {
+        if (!cantabile.song.name)
+            return"";
+        let r = cantabile.song.name;
+        if (cantabile.songStates.currentState)
+            r += ` - ${cantabile.songStates.currentState.name}`
+        return r;
     }
 
     static template = {
         type: "header #header",
         $: [
             {
-                type: "a .title",
-                href: "/",
+                type: "div .title",
                 $: [
                     { 
                         type: "img", 
                         src: "./public/logo.svg",
                     },
-                    config.appName,
-                ]
-            },
-            {
-                type: "nav .nav-links",
-                $: [
-                    /*
-                    { type: "a", attr_href: "/", text: "Status" },
-                    { type: "a", attr_href: "/activities-editor", text: "Activities" },
-                    //{ type: "a", attr_href: "/activities", text: "Activities" },
-                    { type: "a", attr_href: "/console", text: "Console" },
-                    { type: "a", attr_href: "/dmesg", text: "Log" },
-                     */
+                    {
+                        type: "span class=songName",
+                        $: c => c.songAndStateName,
+                    }
                 ]
             },
             {
@@ -40,10 +47,10 @@ export class Header extends Component
                 $: [
                     {
                         type: "div class='control-group info'",
+                        display: () => cantabile.state == "connected",
                         $: [
                             {
                                 type: "input class=button type=checkbox #edit",
-                                checked: "",
                                 on_click: "onEditToggle"
                             },
                             {
@@ -98,11 +105,6 @@ css`
         color: var(--body-fore-color);
         transition: opacity 0.2s;
 
-        &:hover
-        {
-            opacity: 75%;
-        }
-
         img
         {
             height: calc(var(--header-height) - 25px);
@@ -110,27 +112,6 @@ css`
         }
     }
 
-
-    .nav-links
-    {
-        display: flex;
-        gap: 20px;
-        margin-right: 20px;
-
-        a
-        {
-            color: var(--body-fore-color);
-            text-decoration: none;
-            font-size: 0.9rem;
-            opacity: 0.7;
-            transition: opacity 0.15s;
-
-            &:hover
-            {
-                opacity: 1;
-            }
-        }
-    }
 
     .buttons
     {

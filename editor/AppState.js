@@ -1,5 +1,7 @@
 import { Cantabile } from "@toptensoftware/cantabile-js";
 import { config } from "./config.js"
 
-export let C = new Cantabile(config.cantabileHost);
+export let cantabile = new Cantabile(config.cantabileHost);
+
+
 

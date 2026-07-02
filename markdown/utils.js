@@ -174,3 +174,12 @@ export function cssToCamelCase(name) {
     return name.replace(/-([a-z])/g, (_, c) => c.toUpperCase());
 }
 
+
+export function slashConcat(a, b)
+{
+    if (a.endsWith("/"))
+        a = a.substring(0, a.length - 1);
+    if (b.startsWith("/"))
+        b = b.substring(1);
+    return `${a}/${b}`;
+}

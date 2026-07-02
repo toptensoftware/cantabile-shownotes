@@ -1,7 +1,7 @@
 import { Node, HtmlRenderer, XmlRenderer, Parser } from "commonmark";
-import { parseSectionAttributes, cssToCamelCase } from "./utils.js";
+import { parseSectionAttributes, cssToCamelCase, slashConcat } from "./utils.js";
 
-export function parseShowNotes(value)
+export function parseShowNotes(value, opts)
 {
     // Parse markdown to AST
     var markdownParser = new Parser();
@@ -15,6 +15,14 @@ export function parseShowNotes(value)
     while (ev = walker.next())
     {
         let top = scopes[0];
+
+        if (ev.entering && ev.node.type == "image")
+        {
+            if (ev.node.destination.indexOf("://") < 0 && opts.localAssetPrefix)
+            {
+                ev.node.destination = slashConcat(opts.localAssetPrefix, ev.node.destination);
+            }
+        }
 
         if (ev.node.type == "directive")
         {
@@ -152,9 +160,10 @@ function attributeToStyle(attr)
 
 export class ShowNotesHtmlRenderer extends HtmlRenderer
 {
-    constructor()
+    constructor(opts)
     {
         super();
+        this.options = opts;
     }
 
     #resetCode = [];
@@ -418,9 +427,9 @@ const knownStates = [${[...this.#codeForStates.keys()].map(s => `"${s}"`).join("
 }
 
 
-export function renderShowNotes(ast)
+export function renderShowNotes(ast, opts)
 {
-    let renderer = new ShowNotesHtmlRenderer();
+    let renderer = new ShowNotesHtmlRenderer(opts);
     let html = renderer.render(ast);
 
     return {
@@ -432,10 +441,10 @@ export function renderShowNotes(ast)
 }
 
 
-export function parseAndRenderShowNotes(md)
+export function parseAndRenderShowNotes(md, opts)
 {
-    const ast = parseShowNotes(md);
-    return renderShowNotes(ast);
+    const ast = parseShowNotes(md, opts);
+    return renderShowNotes(ast, opts);
 }
 
 // Resolve the current whitespace style for a paragraph
