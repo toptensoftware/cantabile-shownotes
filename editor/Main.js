@@ -1,10 +1,8 @@
-import { Component, css, router } from "@codeonlyjs/core";
+import { Component, css } from "@codeonlyjs/core";
 import { Header } from "./Header.js";
-import { Meta } from "./Meta.js";
-import { config } from "./config.js";
+import { ShowNotesEditor } from "./ShowNotesEditor.js"
 
 import "./ShowNotesEditor.js";
-import "./NotFoundPage.js";
 
 // Main application
 class Main extends Component
@@ -12,18 +10,7 @@ class Main extends Component
     constructor()
     {
         super();
-        this.page = null;
-
-        router.addEventListener("didEnter", (from, to) => {
-
-            // Load navigated page into router slot
-            if (to.page)
-            {
-                this.page = to.page;
-                this.invalidate();
-            }
-
-        });
+        this.page = new ShowNotesEditor();;
     }
 
     static template = {
@@ -52,7 +39,5 @@ css`
 // Main entry point, create Application and mount
 export function main()
 {
-    new Meta().mount("head");
     new Main().mount("body");
-    router.start();
 }

@@ -1,5 +1,4 @@
 export let config = {
-    appName: "Show Notes Sandbox",
-    description: "Cantabile Show Notes",
-    deviceUrl: "",
+    appName: "Cantabile Show Notes",
+    cantabileHost: null,
 }

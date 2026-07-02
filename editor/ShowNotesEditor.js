@@ -1,4 +1,4 @@
-import { Component, css, router, notify } from "@codeonlyjs/core";
+import { Component, css, notify } from "@codeonlyjs/core";
 import { CodeMirrorEditor } from "./CodeMirrorEditor.js";
 import { parseAndRenderShowNotes } from "@toptensoftware/cantabile-shownotes-markdown";
 import { C } from "./AppState.js";
@@ -151,11 +151,3 @@ css`
     }
 }
 `
-
-router.register({
-    pattern: "/",
-    match: (to) => {
-        to.page = new ShowNotesEditor();
-        return true;
-    },
-});

@@ -1,4 +1,5 @@
 import { Cantabile } from "@toptensoftware/cantabile-js";
+import { config } from "./config.js"
 
-export let C = new Cantabile("localhost:35007");
+export let C = new Cantabile(config.cantabileHost);
 

@@ -7,6 +7,7 @@ const config = {
         ],
         rules: [
             { redirect: "/index.html", to: "/" },
+            { rewrite: "/config.js", to: "/config.dev.js" },
         ]
     }
 };
