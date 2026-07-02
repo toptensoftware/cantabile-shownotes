@@ -19,7 +19,7 @@ export default {
       rootDir: '.',
     }),
     resolve({ 
-      preferBuiltins: true,
+      preferBuiltins: false,
       browser: true 
     }),
     commonjs(),
