@@ -1,5 +1,5 @@
 {
-  "name": "webui",
+  "name": "@toptensoftware/cantabile-shownotes-editor",
   "version": "0.2.9",
   "description": "Cantabile Show Notes Editor",
   "type": "module",
