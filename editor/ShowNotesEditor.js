@@ -54,7 +54,6 @@ export class ShowNotesEditor extends Component
         this.#source = value;
         this.invalidate();
         this.render();
-        console.log(`Source set to ${value}`);
     }
 
     updateSource(value)
