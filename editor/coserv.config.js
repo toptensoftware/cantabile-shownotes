@@ -8,7 +8,7 @@ const config = {
         ],
         replace: [
             { from: "./Main.js", to: "/Main.js", contentType: "text/html" },
-            { from: "__PACKAGE_VERSION__", to: JSON.stringify(pkg.version), url: "/config.js" }
+            { from: "__PACKAGE_VERSION__", to: JSON.stringify(pkg.version), url: "/config.dev.js" }
         ],
         rules: [
             { redirect: "/index.html", to: "/" },

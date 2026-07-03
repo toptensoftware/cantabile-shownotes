@@ -12,30 +12,74 @@ export function parseShowNotes(value, opts)
     let ev;
     let scopes = [ { kind: "root" } ];
     let nextId = 0;
+    let documentAttributes = [];
     while (ev = walker.next())
     {
         let top = scopes[0];
 
+        if (!ev.entering && ev.node.type == "document")
+        {
+            // Store the !document directive specified attributes on the document node
+            ev.node.attrs = documentAttributes;
+        }
+
         if (ev.entering && ev.node.type == "image")
         {
-            if (ev.node.destination.indexOf("://") < 0 && opts.localAssetPrefix)
-            {
-                ev.node.destination = slashConcat(opts.localAssetPrefix, ev.node.destination);
-            }
+            // Qualify local assets
+            ev.node.destination = qualifyLocalAsset(ev.node.destination);
         }
 
         if (ev.node.type == "directive")
         {
-            // Remove comment nodes
             if (ev.node.directive.startsWith("!"))
             {
+                // !!Comment node, remove it
                 ev.node.unlink();
                 continue;
             }
 
             switch (ev.node.directive)
             {
+                case "document":
+                {
+                    documentAttributes.push(...parseSectionAttributes(ev.node.args));
+                    ev.node.unlink();
+                    continue;
+                }
+
+                case "include":
+                {
+                    // Resolve url
+                    let dest = qualifyLocalAsset(ev.node.args.trim());
+
+                    // Check if its PDF file
+                    let urlParts = dest.split("?");
+                    let urlPath = urlParts[0];
+                    let query = new URLSearchParams(urlParts[1]);
+                    if (urlPath.endsWith(".pdf") && !query.get("page"))
+                    {
+                        let pdfNode = new Node("pdf");
+                        pdfNode.destination = dest;
+                        replaceNode(ev.node, pdfNode);
+                    }
+                    else
+                    {
+                        // Create an image tag
+                        let imgNode = new Node("image", ev.node.sourcePos);
+                        imgNode.destination = dest;
+
+                        // Create a wrapping paragraph tag
+                        let pNode = new Node("paragraph", ev.node.sourcePos);
+                        pNode.appendChild(imgNode);
+
+                        // Add to AST
+                        replaceNode(ev.node, pNode);
+                    }
+                    continue;
+                }
+
                 case "section":
+                {
                     let attrs = {};
 
                     // Construct a section block node
@@ -62,12 +106,9 @@ export function parseShowNotes(value, opts)
                     });
 
                     // Add to AST
-                    if (top.consumingNode)
-                        top.consumingNode.appendChild(sectionBlock);
-                    else
-                        ev.node.insertBefore(sectionBlock);
-                    ev.node.unlink();
+                    replaceNode(ev.node, sectionBlock);
                     break;
+                }
 
                 case "/section":
                     if (top.kind == 'section')
@@ -121,10 +162,32 @@ export function parseShowNotes(value, opts)
             if (scopes[0].consumingNode)
                 scopes[0].consumingNode.appendChild(ev.node);
         }
+
+        function replaceNode(oldNode, newNode)
+        {
+            if (top.consumingNode)
+                top.consumingNode.appendChild(newNode);
+            else
+                oldNode.insertBefore(newNode);
+            oldNode.unlink();
+        }
+
     }
 
     // Process styles
     return ast;
+
+    // If a local asset prefix is specified and the url doesn't
+    // include protocol, then prepend the local asset prefix.
+    function qualifyLocalAsset(url)
+    {
+        if (url.indexOf("://") < 0 && opts?.localAssetPrefix)
+        {
+            url = slashConcat(opts.localAssetPrefix, url);
+        }
+        return url;
+    }
+
 }
 
 function attributeToStyle(attr)
@@ -162,8 +225,7 @@ export class ShowNotesHtmlRenderer extends HtmlRenderer
 {
     constructor(opts)
     {
-        super();
-        this.options = opts;
+        super(opts);
     }
 
     #resetCode = [];
@@ -215,6 +277,31 @@ const knownStates = [${[...this.#codeForStates.keys()].map(s => `"${s}"`).join("
 
         code += `\n`;
         return code;
+    }
+
+    document(node, entering)
+    {
+        if (entering)
+        {
+            let styles = new Map();
+            styles.set("font-family", "Segoe UI");
+            styles.set("text-align", "center");
+            styles.set("width", "1000px")
+            for (let a of node.attrs)
+            {
+                var s = attributeToStyle(a);
+                if (s)
+                {
+                    styles.set(s.name, s.value);
+                }
+            }
+            this.lit(`<div class="show-notes" style="${[...styles.entries().map(kv => `${kv[0]}: ${kv[1]}`)].join("; ")}">\n`);
+        }
+        else
+        {
+            this.cr();
+            this.lit(`</div>\n`);
+        }
     }
 
     section(node, entering)
@@ -333,27 +420,14 @@ const knownStates = [${[...this.#codeForStates.keys()].map(s => `"${s}"`).join("
         }
     }
 
-    document(node, entering)
-    {
-        if (entering)
-        {
-            this.lit(`<div style="font-family: Segoe UI; text-align:center">\n`);
-        }
-        else
-        {
-            this.cr();
-            this.lit(`</div>\n`);
-        }
-    }
-
-    #nextCodeBlockId = 0;
+    #nextId = 0;
     code_block(node)
     {
         let info_words = node.info ? node.info.split(/\s+/) : [];
         if (info_words[0] == "abc")
         {
             // Allocate id
-            let id = `cb-${this.#nextCodeBlockId++}`;
+            let id = `cb-${this.#nextId++}`;
 
             // Create a div
             this.lit(`<div id="${id}"></div>`);
@@ -367,7 +441,7 @@ const knownStates = [${[...this.#codeForStates.keys()].map(s => `"${s}"`).join("
         else if (info_words[0] == "chord")
         {
             // Allocate id
-            let id = `cb-${this.#nextCodeBlockId++}`;
+            let id = `cb-${this.#nextId++}`;
 
             // Create a div
             this.lit(`<div id="${id}"></div>`);
@@ -381,7 +455,7 @@ const knownStates = [${[...this.#codeForStates.keys()].map(s => `"${s}"`).join("
         else if (info_words[0] == "chordpro")
         {
             // Allocate id
-            let id = `cb-${this.#nextCodeBlockId++}`;
+            let id = `cb-${this.#nextId++}`;
 
             // Create a div
             this.lit(`<div id="${id}"></div>`);
@@ -395,7 +469,7 @@ const knownStates = [${[...this.#codeForStates.keys()].map(s => `"${s}"`).join("
         else if (info_words[0] == "ultimate-guitar")
         {
             // Allocate id
-            let id = `cb-${this.#nextCodeBlockId++}`;
+            let id = `cb-${this.#nextId++}`;
 
             // Create a div
             this.lit(`<div id="${id}"></div>`);
@@ -409,6 +483,16 @@ const knownStates = [${[...this.#codeForStates.keys()].map(s => `"${s}"`).join("
         super.code_block(node);
     }
 
+    pdf(node)
+    {
+        // Allocate id
+        let id = `cb-${this.#nextId++}`;
+        this.lit(`<div class="pdf-container" id="${id}">\n`);
+        this.lit(`</div>`)
+
+        this.#initCode.push(`loadPdf("${id}", ${JSON.stringify(node.destination)});`)
+    }
+
     attrs(node)
     {
         // Apply default attributes
@@ -418,6 +502,11 @@ const knownStates = [${[...this.#codeForStates.keys()].map(s => `"${s}"`).join("
         // on parent section attributes.
         if (node.type == "paragraph")
         {
+            // If paragraph only contains an image, add the "image" class
+            if (node.firstChild && node.firstChild == node.lastChild && node.firstChild.type == "image")
+            {
+                attrs.push(["class", "image"]);
+            }
             attrs.push(["style", `white-space: ${resolveWhiteSpaceStyle(node)}`]);
         }
 
@@ -475,25 +564,86 @@ export function resolveWhiteSpaceStyle(node)
     return result;
 }
 
+async function loadPdf(id, url)
+{
+    let el = document.getElementById(id);
 
+    let delim = url.indexOf("?") < 0 ? "?" : "&"
 
-function initChordSheet()
+    try
+    {
+        // Get PDF info
+        let response = await fetch(url);
+        if (!response.ok) 
+            throw new Error(`Failed to fetch PDF info: ${response.status} ${response.statusText} for ${url}`);
+
+        // Get JSON
+        let pdfInfo = await response.json();
+        for (let i=1; i<=pdfInfo.pageCount; i++)
+        {
+            let elP = document.createElement("p");
+            elP.classList.add("image");
+
+            let elImg = document.createElement("img");
+            elImg.src = url + `${delim}page=${i}`;
+
+            elP.appendChild(elImg);
+            el.appendChild(elP);
+        }
+    }
+    catch (err)
+    {
+        console.log(err.message);
+    }
+}
+
+function init()
 {
     try
     {
-        // Inject the chordsheet styles
+        // Show note styles
+        let css = `
+.show-notes
+{
+    margin: 0 auto;
+    img
+    {
+        max-width: 100%;
+    }
+
+    .image
+    {
+        margin: 5px 0;
+    }
+}
+`;
+
+        // ChordShee styles
         let chordSheetFormatter = new ChordSheetJS.HtmlDivFormatter();
-        let css = chordSheetFormatter.cssString();
+        css += chordSheetFormatter.cssString();
         css += `
-.chord-sheet { display: inline-block }
-.chord { text-align:left; font-family: monospace; font-size: 1.2em; font-weight: 700; margin-top: 1em; }
-lyrics { text-align:left; }
+.chord-sheet 
+{ 
+    display: inline-block 
+}
+.chord 
+{ 
+    text-align:left; 
+    font-family: monospace; 
+    font-size: 1.2em; 
+    font-weight: 700; 
+    margin-top: 1em; 
+}
+.lyrics 
+{ 
+    text-align:left; 
+}
 `;
         let style = document.createElement('style');
         style.textContent = css;
         document.head.appendChild(style);
 
-        // Helper to render a chord sheet
+        // Attach helpers to window
         if (window)
         {
             window.renderChordSheet = function renderChordSheet(id, type, src)
@@ -503,6 +653,8 @@ lyrics { text-align:left; }
                 let html = chordSheetFormatter.format(song);
                 document.getElementById(id).innerHTML = html;
             }
+
+            window.loadPdf = loadPdf;
         }
     }
     catch (err)
@@ -511,4 +663,4 @@ lyrics { text-align:left; }
     }
 }
 
-initChordSheet();
+init();
