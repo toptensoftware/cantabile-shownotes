@@ -23,13 +23,13 @@ Currently implemented and working:
 * Support for inline ABC music notation
 * Support for inline ChordPro notation
 * Support for PDF files (either individual pages, or entire document)
-* Open Source
 
 TODO:
 
 * Ability to convert old show notes to new format
 * Ability to auto-scroll based on Cantabile Song state or transport position
-* Integration back into Cantabile main application
+* Editing tools (formatting, insert section, insert image etc...)
+* Integration into Cantabile main application window
 
 
 ## Installation
@@ -37,7 +37,6 @@ TODO:
 To install Show Notes 2:
 
 1. Install the latest build of Cantabile 4.0
-
 2. Install GhostScript if you need PDF support.
     - [download here](https://ghostscript.com/releases/gsdnld.html)- install the Ghostscript for Windows (64 bit) - Ghostscript AGPL Release
 3. Install the `shownotes2.webfolder`
