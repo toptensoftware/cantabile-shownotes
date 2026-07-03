@@ -1,6 +1,6 @@
 {
   "name": "webui",
-  "version": "0.2.4",
+  "version": "0.2.5",
   "description": "Cantabile Show Notes Editor",
   "type": "module",
   "scripts": {
