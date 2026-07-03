@@ -173,7 +173,6 @@ export class CodeMirrorEditor extends Component
     get value() { return this.#value; }
     set value(v)
     {
-        if (this.#value === (v ?? "")) return;
         this.#value = v ?? "";
         if (this.#editorView)
         {
