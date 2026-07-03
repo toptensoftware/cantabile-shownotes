@@ -38,7 +38,8 @@ To install Show Notes 2:
 
 1. Install the latest build of Cantabile 4.0
 2. Install GhostScript if you need PDF support.
-    - [download here](https://ghostscript.com/releases/gsdnld.html)- install the Ghostscript for Windows (64 bit) - Ghostscript AGPL Release
+    - [download here](https://ghostscript.com/releases/gsdnld.html)
+    - install the Ghostscript for Windows (64 bit) - Ghostscript AGPL Release
 3. Install the `shownotes2.webfolder`
     - [download here](https://github.com/toptensoftware/cantabile-shownotes/releases/download/latest/shownotes2.webfolder)
     - Copy the downloaded `shownotes2.webfolder` to your "Resources" directory.
