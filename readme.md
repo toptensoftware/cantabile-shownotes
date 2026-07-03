@@ -26,6 +26,7 @@ Currently implemented and working:
 
 TODO:
 
+* Support for embedded variables eg: `$(SongName)`
 * Ability to convert old show notes to new format
 * Ability to auto-scroll based on Cantabile Song state or transport position
 * Editing tools (formatting, insert section, insert image etc...)
