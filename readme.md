@@ -46,7 +46,7 @@ To install Show Notes 2:
     - Copy the downloaded `shownotes2.webfolder` to your "Resources" directory.
     - The resources directory is typically `C:\Users\YOURUSERNAME\Documents\Cantabile\Resources`
     - To check your resources folder location go to Cantabile -> Tools -> Options -> File Locations -> Resources
-4. Restart Cantabile if already running
+4. Restart Cantabile if already running (note this requires Cantabile Performer, other editions not supported)
 
 ## Usage
 
