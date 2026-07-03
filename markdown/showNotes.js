@@ -102,7 +102,7 @@ export function parseShowNotes(value, opts)
                         // Default attribute?
                         if (!visAttrs.some(x => x.args == null || x.args.length == 0))
                         {
-                            sectionBlock.attrs.unshift({ name: "visible", value: !!visAttrs[0].value });
+                            sectionBlock.attrs.unshift({ name: "visible", value: visAttrs[0].value === 'false'});
                         }
                     }
 
