@@ -6,12 +6,12 @@ This repository contains the source code for Cantabile Show Notes 2.
 
 * Markdown processing is based on a custom fork of commonmarkjs ([see here](https://github.com/toptensoftware/commonmark.js/)) that provides support for parsing directives (eg: !section, !document etc...)
 * The [`./markdown`](./markdown) project uses commonmarkjs to parse the markdown and  render final html and script and handles all custom directives
-* The [`./editor`](./editor) project contains the editor package that is bundled into the `shownotes2.webfolder` package as served by
+* The [`./editor`](./editor) project contains the editor package that is bundled up as `shownotes2.webfolder` package as served by
   Cantabile's web server
 * [CodeOnlyJS](https://codeonlyjs.org/) is used for the front-end web framework
 * [cantabile-js](https://github.com/toptensoftware/cantabile-js/tree/v0.3) is used for network access to Cantabile
 * [CodeMirror](https://codemirror.net/) is used for the text editor
-* [Rollup](https://rollupjs.org/) is used to bundling
+* [Rollup](https://rollupjs.org/) is used for bundling
 
 
 ## Development Environment
