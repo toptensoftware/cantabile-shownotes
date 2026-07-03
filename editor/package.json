@@ -9,7 +9,7 @@
     "prod": "npm run build && coserv --prod"
   },
   "author": "",
-  "license": "ISC",
+  "license": "MIT",
   "dependencies": {
     "@codemirror/lang-markdown": "^6.5.0",
     "@codeonlyjs/core": "github:codeonlyjs/core",
