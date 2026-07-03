@@ -387,7 +387,7 @@ const knownStates = [${[...this.#codeForStates.keys()].map(s => `"${s}"`).join("
                 this.cr();
                 this.lit(`<div style="display:grid">\n`);
                 this.lit(`<div style="grid-area: 1 / 1">\n`);
-                this.lit(`<img style="max-width: 100%" src="${imageAttr.value}" />\n`);
+                this.lit(`<img style="max-width: 100%" src="${qualifyLocalAsset(imageAttr.value)}" />\n`);
                 this.lit(`</div>\n`);
                 this.lit(`<div style="grid-area: 1 / 1">`);
             }
