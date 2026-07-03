@@ -88,6 +88,13 @@ export function parseShowNotes(value, opts)
                     sectionBlock.id = nextId++;
                     sectionBlock.attrs = parseSectionAttributes(ev.node.args);
 
+                    // Qualify local image assets
+                    for (let a of sectionBlock.attrs)
+                    {
+                        if (a.name == "image")
+                            a.value = qualifyLocalAsset(a.value);
+                    }
+
                     // Resolve default visibility
                     let visAttrs = sectionBlock.attrs.filter(x => x.name == "visible")
                     if (visAttrs.length > 0)
@@ -387,7 +394,7 @@ const knownStates = [${[...this.#codeForStates.keys()].map(s => `"${s}"`).join("
                 this.cr();
                 this.lit(`<div style="display:grid">\n`);
                 this.lit(`<div style="grid-area: 1 / 1">\n`);
-                this.lit(`<img style="max-width: 100%" src="${qualifyLocalAsset(imageAttr.value)}" />\n`);
+                this.lit(`<img style="max-width: 100%" src="${imageAttr.value}" />\n`);
                 this.lit(`</div>\n`);
                 this.lit(`<div style="grid-area: 1 / 1">`);
             }
