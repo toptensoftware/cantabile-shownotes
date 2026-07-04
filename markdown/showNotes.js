@@ -1,6 +1,7 @@
 import { Node, HtmlRenderer, XmlRenderer, Parser } from "commonmark";
 import { parseSectionAttributes, cssToCamelCase, slashConcat } from "./utils.js";
 
+
 export function parseShowNotes(value, opts)
 {
     // Parse markdown to AST

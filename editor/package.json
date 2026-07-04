@@ -1,6 +1,6 @@
 {
   "name": "@toptensoftware/cantabile-shownotes-editor",
-  "version": "0.2.10",
+  "version": "0.2.11",
   "description": "Cantabile Show Notes Editor",
   "type": "module",
   "scripts": {

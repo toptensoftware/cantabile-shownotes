@@ -1,3 +1,4 @@
+/** Behaviour flags for state fields */
 const Behaviours = {
     hidden: 1 << 0,
     text: 1 << 1,
@@ -5,7 +6,13 @@ const Behaviours = {
     colors: 1 << 3,
 };
 
-function applyState(r, showNote, stateId, behaviour)
+/** Applies a state to a show note, based on the specified behaviour flags 
+ * @param {Object} mstate The target markdown state object to apply the state to
+ * @param {Object} showNote The source show note object
+ * @param {number} stateId The ID of the state to apply
+ * @param {number} behaviour The behaviour flags indicating which state fields to apply
+ */
+function applyState(mstate, showNote, stateId, behaviour)
 {
     // Quit if nop
     if (stateId == 0 || behaviour == 0)
@@ -18,23 +25,28 @@ function applyState(r, showNote, stateId, behaviour)
 
     // Apply fields
     if (behaviour & Behaviours.hidden)
-        r.hidden = state.hidden;
+        mstate.hidden = state.hidden;
     if (behaviour & Behaviours.text)
-        r.text = state.text;
+        mstate.text = state.text;
     if (behaviour & Behaviours.image)
-        r.imageFile = state.imageFileRelative;
+        mstate.imageFile = state.imageFileRelative;
     if (behaviour & Behaviours.colors)
     {
-        r.backgroundColor = state.backgroundColor;
-        r.textColor = state.textColor;
+        mstate.backgroundColor = state.backgroundColor;
+        mstate.textColor = state.textColor;
     }
 }
 
-// Resolve a show note for a specified state
+/** Resolve a show note for a specified state
+ * @param {Object} showNote The source show note object
+ * @param {Array} states The array of state objects
+ * @returns {Object} The resolved markdown note object with an array of states
+ */
+
 function resolveNote(showNote, states)
 {
     // Start with defaults
-    let n = { 
+    let mnote = { 
         id: showNote.uniqueID,
         hidden: showNote.hidden,
         backgroundColor: showNote.backgroundColor,
@@ -48,46 +60,65 @@ function resolveNote(showNote, states)
         states: [],
     }
 
+    // Apply states
     for (let state of states)
     {
+        // Start with a blank state object
         let s = {};
         s.name = state.name;
-        n.states.push(s);
+        mnote.states.push(s);
+
+        // Apply the common state fields
         applyState(s, showNote, state.id, showNote.stateManager.behaviour);
+
+        // Apply the non-linked state fields
         applyState(s, showNote, state.idNonLinked, showNote.stateManager.nonLinkedBehaviour);
     }
 
-    return n;
+    // Return the final note
+    return mnote;
 }
 
-function expandMixedNote(n)
+/** Markdown notes don't support per-state text or image so we need 
+ *  to expand any notes that have different text or image between states 
+ *  into multiple notes, one for each unique text/image combination. 
+ * @param {Object} mnote The markdown note object to expand
+ * @returns {Array} An array of markdown note objects, one for each unique text/image combination
+ */
+function expandMixedNote(mnote)
 {
     let newNotes = [];
 
-    for (let s of n.states)
+    for (let s of mnote.states)
     {
         // Ignore if hidden
-        if (s.hidden === true || (s.hidden === undefined && n.hidden))
+        if (s.hidden === true || (s.hidden === undefined && mnote.hidden))
             continue;
 
         // Does text and image match?
-        if ((s.text !== undefined && s.text !== n.text) || 
-            (s.imageFile !== undefined && s.imageFile !== n.imageFile))
+        if ((s.text !== undefined && s.text !== mnote.text) || 
+            (s.imageFile !== undefined && s.imageFile !== mnote.imageFile))
         {
-            // Create a replacement node with the different text and image
+            // No, so create (or use an existing) replacement node with 
+            // the different text and image
             let replacementNote = newNotes.find(n => n.text === s.text && n.imageFile === s.imageFile);
             if (!replacementNote)
             {
-                replacementNote = structuredClone(n);
+                // Copy the note
+                replacementNote = structuredClone(mnote);
                 newNotes.push(replacementNote);
+
+                // Start with all states hidden and no text or image
                 replacementNote.states.forEach(s => {
                     s.hidden = true,
                     delete s.text;
                     delete s.imageFile;
                 });
+
+                // Store the text and image on the replacement
+                replacementNote.text = s.text;
+                replacementNote.imageFile = s.imageFile;
             }
-            replacementNote.text = s.text;
-            replacementNote.imageFile = s.imageFile;
 
             // Make this state as visible in the replacement note
             let replacementState = replacementNote.states.find(rs => rs.name === s.name);
@@ -97,16 +128,23 @@ function expandMixedNote(n)
             s.hidden = true;
         }
 
+        // Remove the text and image from this stae
         delete s.text;
         delete s.imageFile;
     }
 
-    if (n.states.every(x => x.hidden))
+    // Return the original note plus any new notes, but only if the
+    // original note has at least one visible state
+    if (mnote.states.every(x => x.hidden))
         return [ ...newNotes ];
     else
-        return [ n, ...newNotes ];
+        return [ mnote, ...newNotes ];
 }
 
+/** Helper to find the most frequent value in an array 
+ * @param {Array} arr The array to analyze
+ * @returns {any} The most frequent value
+ */
 function mostFrequent(arr) {
   const counts = new Map();
   let best = arr[0], bestCount = 0;
@@ -122,32 +160,44 @@ function mostFrequent(arr) {
   return best;
 }
 
-function cleanupStates(n)
+/** Clean up redundant states on a note objectn.
+ * @param {Object} mnote The markdown note object to clean up
+ */
+function cleanupStates(mnote)
 {
     simplify("backgroundColor");
     simplify("textColor");
     simplify("hidden");
 
+    // Updates the note object and it's states to the most frequent value
+    // for a field is on the note itself, and states have the less frequent
+    // values.  This reduces the amount of conditions logic in the final markdown.
     function simplify(field)
     {
-        let values = [n[field], ...n.states.filter(s => s[field] !== undefined && (field === 'hidden' || s.hidden !== false)).map(s => s[field])];
+        // Get all the values of this field across the note and its states
+        let values = [mnote[field], ...mnote.states.filter(s => s[field] !== undefined && (field === 'hidden' || s.hidden !== false)).map(s => s[field])];
+
+        // Work out which is most frequent and make that the note's value, and 
+        // the less frequent values on the states
         let mostFreq = mostFrequent(values);
-        if (n[field] != mostFreq)
+        if (mnote[field] != mostFreq)
         {
-            for (let s of n.states)
+            for (let s of mnote.states)
             {
                 if (s[field] === mostFreq)
                     delete s[field];
                 else 
-                    s[field] = n[field];
+                    s[field] = mnote[field];
             }   
-            n[field] = mostFreq;
+            mnote[field] = mostFreq;
         }
     }
 
-    for (let s of n.states)
+    // Delete any state fields that are the same as the note's field or
+    // fields that aren't used because the note is hidden
+    for (let s of mnote.states)
     {
-        if (s.hidden == true || (s.hidden === undefined && n.hidden))
+        if (s.hidden == true || (s.hidden === undefined && mnote.hidden))
         {
             delete s.backgroundColor;
             delete s.textColor;
@@ -155,21 +205,27 @@ function cleanupStates(n)
             delete s.imageFile;
         }
 
-        if (s.hidden === n.hidden)
+        if (s.hidden === mnote.hidden)
             delete s.hidden;
-        if (s.backgroundColor === n.backgroundColor)
+        if (s.backgroundColor === mnote.backgroundColor)
             delete s.backgroundColor;
-        if (s.textColor === n.textColor)
+        if (s.textColor === mnote.textColor)
             delete s.textColor;
-        if (s.text === n.text)
+        if (s.text === mnote.text)
             delete s.text;
-        if (s.imageFile === n.imageFile)
+        if (s.imageFile === mnote.imageFile)
             delete s.imageFile;
     }
 
-    n.states = n.states.filter(s => Object.keys(s).length > 1);
+    // Filter out any redundant states that have no fields left
+    mnote.states = mnote.states.filter(s => Object.keys(s).length > 1);
 }
 
+/** Escape a state name for use in markdown.  If it contains any non-alphanumeric characters 
+    it will be quoted and any quotes escaped.
+ * @param {string} name The state name to escape
+ * @returns {string} The escaped state name
+ */
 function escapeStateName(name)
 {
     if (name.match(/^[a-zA-Z0-9_]+$/))
@@ -195,6 +251,13 @@ const colorMap = {
     Brown: 14,
 }
 
+
+/** The JSON dump of the v1 show notes uses hard coded names for the
+ *  color indicies used in Cantabile.  This function maps those names 
+ *  to the color index that name represents.
+ * @param {string} name The color name to map
+ * @returns {string} The color index name to use in markdown
+ */
 function mapColor(name)
 {
     if (colorMap[name] === undefined)
@@ -203,35 +266,46 @@ function mapColor(name)
     return `color${colorMap[name]}`;
 }
 
+/** Migrate v1 show notes to the new markdown format
+ * @param {Object} v1raw The raw v1 show notes object
+ * @returns {string} The markdown representation of the show notes
+ */
 export function migrate(v1raw)
 {
+    // Crack input
     let { showNotes, states } = v1raw;
 
+    // If there are no show notes, return an empty string
     if (showNotes.length == 0)
         return "";
 
-    let notes = [];
+    // Process each note object
+    let mnotes = [];
     for (let showNote of showNotes)
     {
-        // Resolve note states
-        let n = resolveNote(showNote, states);
+        // Resolve note into a markdown note object with an array of states
+        let mnote = resolveNote(showNote, states);
 
+        /*
         console.log(`----- Show note #${n.id} -----`);
         console.log(`Resolved:`);
         console.log(JSON.stringify(n, null, 4));
+        */
 
-        // Resolve mixed notes (where text and image differ between states)
-        let expanded = expandMixedNote(n);
-        notes.push(...expanded);
+        // Expand mixed mode notes 
+        // (ie: where text and image differ between states)
+        let expanded = expandMixedNote(mnote);
+        mnotes.push(...expanded);
 
+        /*
         console.log(`Expanded:`);
         console.log(JSON.stringify(expanded, null, 4));
-
         console.log("\n\n");
+        */
     }
 
     // Remove redundant state fields
-    notes.forEach(n => cleanupStates(n));
+    mnotes.forEach(n => cleanupStates(n));
 
 
     // Now render to markdown
@@ -242,65 +316,66 @@ export function migrate(v1raw)
 !! still see your original notes and not any modifications made here.
 
 `;
-    for (let n of notes)
+    for (let mnote of mnotes)
     {
         md += `!section `;
 
-        if (n.hidden)
+        if (mnote.hidden)
         {
-            let shownStates = n.states.filter(s => s.hidden !== true);
+            let shownStates = mnote.states.filter(s => s.hidden !== true);
             if (shownStates.length > 0)
                 md += `visible(${shownStates.map(s => escapeStateName(s.name)).join(",")})=true `;
         }
         else
         {
-            let hiddenStates = n.states.filter(s => s.hidden === true);
+            let hiddenStates = mnote.states.filter(s => s.hidden === true);
             if (hiddenStates.length > 0)
                 md += `visible(${hiddenStates.map(s => escapeStateName(s.name)).join(",")})=false `;
         }
 
-        md += formatColor("fg", "textColor");
-        md += formatColor("bg", "backgroundColor");
+        md += formatColorAttributes("fg", "textColor");
+        md += formatColorAttributes("bg", "backgroundColor");
 
-        if (n.imageFile && n.imageFile != "")
+        if (mnote.imageFile && mnote.imageFile != "")
         {
-            md += `image=\"${n.imageFile.replace(/\\/g, "/")}\" `;
+            md += `image=\"${mnote.imageFile.replace(/\\/g, "/")}\" `;
         }
 
-        if (n.alignment != "Center")
-            md += `align=${n.alignment.toLowerCase()} `;
-        if (n.fontSize != 16)
-            md += `size=${n.fontSize} `;
-        if (n.bold)
+        if (mnote.alignment != "Center")
+            md += `align=${mnote.alignment.toLowerCase()} `;
+        if (mnote.fontSize != 16)
+            md += `size=${mnote.fontSize} `;
+        if (mnote.bold)
             md += `bold `;
-        if (n.fixedPitch)
+        if (mnote.fixedPitch)
             md += `fixed `;
 
         md += "\n";
-        if (n.fixedPitch)
+        if (mnote.fixedPitch)
             md += "```\n";
-        md += n.text;
-        if (n.fixedPitch)
+        md += mnote.text;
+        if (mnote.fixedPitch)
         {
-            if (!n.text.endsWith("\n"))
+            if (!mnote.text.endsWith("\n"))
                 md += "\n";
             md += "```";
         }
         md += "\n";
         md += "!/section\n\n"
 
-        function formatColor(prefix, field)
+        // Helper for format color attributes
+        function formatColorAttributes(prefix, field)
         {
             let r = "";
-            if (n[field] != "Default")
-                r += `${prefix}=${mapColor(n[field])} `;
+            if (mnote[field] != "Default")
+                r += `${prefix}=${mapColor(mnote[field])} `;
 
-            let otherColors = [... new Set(n.states.map(x => x[field]).filter(x => x !== undefined))];
+            let otherColors = [... new Set(mnote.states.map(x => x[field]).filter(x => x !== undefined))];
 
             for (let c of otherColors)
             {
                 let color = c == "Default" ? "" : c;
-                r += `${prefix}(${n.states.filter(s => s[field] === c).map(s => escapeStateName(s.name)).join(",")})=${mapColor(color)} `;
+                r += `${prefix}(${mnote.states.filter(s => s[field] === c).map(s => escapeStateName(s.name)).join(",")})=${mapColor(color)} `;
             }
 
             return r;

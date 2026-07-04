@@ -1,17 +1,3 @@
-export function isBlockElement(node)
-{
-    switch (node.type)
-    {
-        case "paragraph":
-        case "list":
-        case "block-quote":
-        case "item":
-        case "image":
-        case "heading":
-            return true;
-    }
-    return false;
-}
 
 export function parseSectionAttributes(input) 
 {
@@ -88,38 +74,6 @@ export function parseSectionAttributes(input)
 
     return attrs;
 }
-
-/*
-function formatAttributeValue(val)
-{
-    return val.map(arg => {
-        if (/[\s,"()\\]/.test(arg)) {
-            return '"' + arg.replace(/\\/g, '\\\\').replace(/"/g, '\\"') + '"';
-        }
-        return arg;
-    }).join(", ");
-}
-
-function formatAttributes(attrs) {
-    return attrs.map(attr => {
-        if (attr.args.length === 0) return attr.name;
-        const args = attr.args.map(arg => {
-            if (/[\s,"()\\]/.test(arg)) {
-                return '"' + arg.replace(/\\/g, '\\\\').replace(/"/g, '\\"') + '"';
-            }
-            return arg;
-        });
-        var nameArgs = `${attr.name}(${args.join(', ')})`;
-        if (attr.value !== undefined) {
-            if (/[\s,"()\\]/.test(attr.value)) {
-                nameArgs += `="${attr.value.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`;
-            }
-        }   
-        return nameArgs;
-    }).join(' ');
-}
-*/
-
 
 export function convertAstToJson(ast)
 {
