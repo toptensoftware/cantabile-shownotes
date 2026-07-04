@@ -4,7 +4,7 @@ import { EditorView, keymap, ViewPlugin, Decoration } from "@codemirror/view";
 import { EditorState, Compartment, RangeSetBuilder } from "@codemirror/state";
 import { indentMore, indentLess } from "@codemirror/commands";
 import { markdown } from "@codemirror/lang-markdown";
-import { HighlightStyle, syntaxHighlighting, indentUnit } from "@codemirror/language";
+import { HighlightStyle, syntaxHighlighting, indentUnit, syntaxTree } from "@codemirror/language";
 import { tags, Tag } from "@lezer/highlight";
 
 // ---------------------------------------------------------------------------
@@ -42,28 +42,103 @@ const showWhitespace = ViewPlugin.fromClass(
 
 // ---------------------------------------------------------------------------
 // Directive syntax extension  (!ident ...  and  !/ident)
+// Lines starting with '!!' are treated as comments
 // ---------------------------------------------------------------------------
 
 const directiveTag = Tag.define();
 
 const directiveExtension = {
-    defineNodes: [{ name: "Directive", block: true, style: directiveTag }],
-    parseBlock: [{
-        name: "Directive",
-        parse(cx, line) {
-            if (line.next !== 33) return false; // must start with '!'
-            const rest = line.text.slice(line.pos + 1);
-            if (!/^\/?[A-Za-z_]\w*/.test(rest)) return false;
-            cx.addElement(cx.elt("Directive", cx.lineStart + line.pos, cx.lineStart + line.text.length));
-            cx.nextLine();
-            return true;
+    defineNodes: [
+        { name: "Directive", block: true, style: directiveTag },
+        { name: "DirectiveComment", block: true, style: tags.comment },
+    ],
+    parseBlock: [
+        {
+            name: "DirectiveComment",
+            parse(cx, line) {
+                if (line.next !== 33) return false; // must start with '!'
+                if (line.text.charCodeAt(line.pos + 1) !== 33) return false; // second char must be '!'
+                cx.addElement(cx.elt("DirectiveComment", cx.lineStart + line.pos, cx.lineStart + line.text.length));
+                cx.nextLine();
+                return true;
+            },
+            endLeaf(cx, line) {
+                return line.next === 33 && line.text.charCodeAt(line.pos + 1) === 33;
+            }
         },
-        endLeaf(cx, line) {
-            if (line.next !== 33) return false;
-            return /^\/?[A-Za-z_]\w*/.test(line.text.slice(line.pos + 1));
+        {
+            name: "Directive",
+            parse(cx, line) {
+                if (line.next !== 33) return false; // must start with '!'
+                const rest = line.text.slice(line.pos + 1);
+                if (!/^\/?[A-Za-z_]\w*/.test(rest)) return false;
+                cx.addElement(cx.elt("Directive", cx.lineStart + line.pos, cx.lineStart + line.text.length));
+                cx.nextLine();
+                return true;
+            },
+            endLeaf(cx, line) {
+                if (line.next !== 33) return false;
+                return /^\/?[A-Za-z_]\w*/.test(line.text.slice(line.pos + 1));
+            }
         }
-    }]
+    ]
 };
+
+// ---------------------------------------------------------------------------
+// Auto-link raw URLs inside comment lines (ctrl/cmd-click to open)
+// ---------------------------------------------------------------------------
+
+const urlRegex = /https?:\/\/[^\s]+/g;
+const commentLinkDeco = Decoration.mark({ class: "cm-comment-link" });
+
+function buildCommentLinkDeco(view)
+{
+    const builder = new RangeSetBuilder();
+    const tree = syntaxTree(view.state);
+    for (const { from, to } of view.visibleRanges)
+    {
+        tree.iterate({
+            from, to,
+            enter: (node) => {
+                if (node.name !== "DirectiveComment") return;
+                const text = view.state.doc.sliceString(node.from, node.to);
+                urlRegex.lastIndex = 0;
+                let m;
+                while ((m = urlRegex.exec(text)))
+                {
+                    let start = m.index;
+                    let end = start + m[0].length;
+                    while (end > start && /[.,!?;:'")\]]/.test(text[end - 1])) end--;
+                    if (end > start)
+                        builder.add(node.from + start, node.from + end, commentLinkDeco);
+                }
+            }
+        });
+    }
+    return builder.finish();
+}
+
+const commentLinks = ViewPlugin.fromClass(
+    class {
+        constructor(view)  { this.decorations = buildCommentLinkDeco(view); }
+        update(update)     {
+            if (update.docChanged || update.viewportChanged)
+                this.decorations = buildCommentLinkDeco(update.view);
+        }
+    },
+    { decorations: v => v.decorations }
+);
+
+const commentLinkClickHandler = EditorView.domEventHandlers({
+    click(event, view) {
+        if (!(event.ctrlKey || event.metaKey)) return false;
+        const target = event.target.closest?.(".cm-comment-link");
+        if (!target) return false;
+        window.open(target.textContent, "_blank", "noopener,noreferrer");
+        event.preventDefault();
+        return true;
+    }
+});
 
 // ---------------------------------------------------------------------------
 // CodeMirror theme helpers
@@ -84,6 +159,7 @@ const darkHighlight = HighlightStyle.define([
     { tag: tags.meta,                               color: "#d4d4d4", opacity: "0.6" },
     { tag: tags.punctuation,                        opacity: "0.6" },
     { tag: directiveTag,                            color: "#c586c0" },
+    { tag: tags.comment,                            color: "#6a9955", fontStyle: "italic" },
 ]);
 
 const lightHighlight = HighlightStyle.define([
@@ -101,6 +177,7 @@ const lightHighlight = HighlightStyle.define([
     { tag: tags.meta,                               opacity: "0.6" },
     { tag: tags.punctuation,                        opacity: "0.6" },
     { tag: directiveTag,                            color: "#af00db" },
+    { tag: tags.comment,                            color: "#008000", fontStyle: "italic" },
 ]);
 
 function makeThemeExtensions(isDark)
@@ -135,6 +212,7 @@ function makeThemeExtensions(isDark)
                 backgroundSize: "100% 100%",
             },
             ".cm-vis-tab":    { position: "relative" },
+            ".cm-comment-link": { textDecoration: "underline", cursor: "pointer" },
         }, { dark: isDark }),
         syntaxHighlighting(isDark ? darkHighlight : lightHighlight),
     ];
@@ -217,6 +295,8 @@ export class CodeMirrorEditor extends Component
                     indentUnit.of("    "),
                     keymap.of([{ key: "Tab", run: smartTab }, { key: "Shift-Tab", run: indentLess }]),
                     showWhitespace,
+                    commentLinks,
+                    commentLinkClickHandler,
                     markdown({ extensions: [directiveExtension] }),
                     this.#themeCompartment.of(makeThemeExtensions(isDark)),
                     EditorView.updateListener.of(update => {

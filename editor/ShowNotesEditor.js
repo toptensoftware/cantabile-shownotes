@@ -1,6 +1,6 @@
 import { Component, css, notify } from "@codeonlyjs/core";
 import { CodeMirrorEditor } from "./CodeMirrorEditor.js";
-import { parseAndRenderShowNotes } from "@toptensoftware/cantabile-shownotes-markdown";
+import { parseAndRenderShowNotes, migrate } from "@toptensoftware/cantabile-shownotes-markdown";
 import { cantabile } from "./AppState.js";
 import { config } from "./config.js";
 
@@ -15,7 +15,12 @@ export class ShowNotesEditor extends Component
 
         // Update to show new show notes
         this.listen(cantabile.showNotes, 'markdownChanged', () => {
-            this.source = cantabile.showNotes.markdown;
+            this.loadNotesFromSong();
+        });
+
+        this.listen(cantabile.showNotes, 'changed', () => {
+            if (this.#cleanMigrate)
+                this.loadNotesFromSong();
         });
 
         // Update states
@@ -24,9 +29,28 @@ export class ShowNotesEditor extends Component
         });
     }
 
+    #cleanMigrate = false;
+
     onMount()
     {
-        this.source = cantabile.showNotes.markdown;
+        this.loadNotesFromSong();
+    }
+
+    async loadNotesFromSong()
+    {
+        if (cantabile.showNotes.markdown ?? "" != "")
+        {
+            this.source = cantabile.showNotes.markdown;
+            this.#cleanMigrate = false;
+            return;
+        }
+
+        var v1raw = await cantabile.showNotes.getV1Raw();
+        if (v1raw)
+        {
+            this.source = migrate(v1raw);
+            this.#cleanMigrate = true;
+        }
     }
 
     #editMode = false;
@@ -61,6 +85,8 @@ export class ShowNotesEditor extends Component
         // Redundant?
         if (this.#source == value)
             return;
+
+        this.#cleanMigrate = false;
 
         // Store new code
         this.#source = value;
@@ -147,6 +173,7 @@ css`
     .output {
         flex: 1; /* takes 50% of space */
         overflow: auto;
+        background-color: var(--back-color);
     }
 
     .input {

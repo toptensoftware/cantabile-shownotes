@@ -11,7 +11,7 @@
 			"fixedPitch": false,
 			"imageFile": "",
 			"uniqueID": 1,
-			"text": "Note 1 s1",
+			"text": "Note 1 s2\n",
 			"imageFileRelative": "",
 			"imageScale": 1,
 			"stateManager": 
@@ -78,10 +78,10 @@
 			"fontSize": 16,
 			"bold": false,
 			"fixedPitch": false,
-			"imageFile": "C:\\Users\\brad\\Documents\\Cantabile\\Assets\\background.png",
+			"imageFile": "",
 			"uniqueID": 2,
 			"text": "Note 2",
-			"imageFileRelative": "Assets\\background.png",
+			"imageFileRelative": "",
 			"imageScale": 1,
 			"stateManager": 
 			{
@@ -141,15 +141,15 @@
 		},
 		{
 			"hidden": false,
-			"backgroundColor": "Red",
-			"textColor": "Yellow",
+			"backgroundColor": "Green",
+			"textColor": "Lime",
 			"alignment": "Left",
 			"fontSize": 16,
 			"bold": false,
 			"fixedPitch": false,
 			"imageFile": "",
 			"uniqueID": 3,
-			"text": "Note S4 Clone\n",
+			"text": "Note 3",
 			"imageFileRelative": "",
 			"imageScale": 1,
 			"stateManager": 
@@ -196,7 +196,7 @@
 					},
 					"4": 
 					{
-						"text": "Note S4 Clone\n",
+						"text": "Note S4",
 						"imageFile": "",
 						"imageFileRelative": "",
 						"hidden": false,

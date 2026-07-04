@@ -197,15 +197,25 @@ export function parseShowNotes(value, opts)
 
 }
 
+function mapColorPreset(color, kind)
+{
+    let m = color.match(/^color(\d+)$/);
+    if (!m)
+        return color;
+
+    return `var(--${kind}-${color})`
+}
+
+
 function attributeToStyle(attr)
 {
     switch (attr.name)
     {
         // Custom short-cuts
         case "fg":
-            return { name: "color", value: attr.value };
+            return { name: "color", value: mapColorPreset(attr.value, "fg") };
         case "bg":
-            return { name: "background-color", value: attr.value };
+            return { name: "background-color", value: mapColorPreset(attr.value, "bg") };
         case "visible":
             return { name: "display", value: (attr.value == "false" || attr.value === false) ? "none" : "block" };
         case "align":
@@ -621,6 +631,22 @@ function init()
     .image
     {
         margin: 5px 0;
+    }
+    
+    .section
+    {
+        padding: 10px;
+    }
+
+    p
+    {
+        margin: 0;
+        padding: 0;
+    }
+
+    code
+    {
+        color: inherit;
     }
 }
 `;

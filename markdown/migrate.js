@@ -22,7 +22,7 @@ function applyState(r, showNote, stateId, behaviour)
     if (behaviour & Behaviours.text)
         r.text = state.text;
     if (behaviour & Behaviours.image)
-        r.imageFile = state.imageFileRelative;  
+        r.imageFile = state.imageFileRelative;
     if (behaviour & Behaviours.colors)
     {
         r.backgroundColor = state.backgroundColor;
@@ -35,6 +35,7 @@ function resolveNote(showNote, states)
 {
     // Start with defaults
     let n = { 
+        id: showNote.uniqueID,
         hidden: showNote.hidden,
         backgroundColor: showNote.backgroundColor,
         textColor: showNote.textColor,
@@ -59,7 +60,7 @@ function resolveNote(showNote, states)
     return n;
 }
 
-function resolveMixedNote(n)
+function expandMixedNote(n)
 {
     let newNotes = [];
 
@@ -100,7 +101,10 @@ function resolveMixedNote(n)
         delete s.imageFile;
     }
 
-    return [ n, ...newNotes ];
+    if (n.states.every(x => x.hidden))
+        return [ ...newNotes ];
+    else
+        return [ n, ...newNotes ];
 }
 
 function mostFrequent(arr) {
@@ -134,7 +138,7 @@ function cleanupStates(n)
             {
                 if (s[field] === mostFreq)
                     delete s[field];
-                else if (!s[field])
+                else 
                     s[field] = n[field];
             }   
             n[field] = mostFreq;
@@ -173,9 +177,38 @@ function escapeStateName(name)
     return `"${name.replace(/"/g, '\\"')}"`;
 }
 
+const colorMap = {
+    Default: 0,
+    Red: 1,
+    Maroon: 2,
+    Green: 3,
+    Lime: 4,
+    Blue: 5,
+    Navy: 6,
+    Yellow: 7,
+    Olive: 8,
+    Fuscia: 9,
+    Purple: 10,
+    Cyan: 11,
+    Teal: 12,
+    Orange: 13,
+    Brown: 14,
+}
+
+function mapColor(name)
+{
+    if (colorMap[name] === undefined)
+        return name;
+
+    return `color${colorMap[name]}`;
+}
+
 export function migrate(v1raw)
 {
     let { showNotes, states } = v1raw;
+
+    if (showNotes.length == 0)
+        return "";
 
     let notes = [];
     for (let showNote of showNotes)
@@ -183,26 +216,32 @@ export function migrate(v1raw)
         // Resolve note states
         let n = resolveNote(showNote, states);
 
+        console.log(`----- Show note #${n.id} -----`);
+        console.log(`Resolved:`);
+        console.log(JSON.stringify(n, null, 4));
+
         // Resolve mixed notes (where text and image differ between states)
-        notes.push(...resolveMixedNote(n));
-        //notes.push(n);
+        let expanded = expandMixedNote(n);
+        notes.push(...expanded);
+
+        console.log(`Expanded:`);
+        console.log(JSON.stringify(expanded, null, 4));
+
+        console.log("\n\n");
     }
 
     // Remove redundant state fields
     notes.forEach(n => cleanupStates(n));
 
-    // Dump
-    let index = 1;
-    for (let n of notes)
-    {
-        console.log(`Show note #${index}:`)
-        console.log(JSON.stringify(n, null, 4));
-        console.log("\n\n");
-        index++;
-    }
 
     // Now render to markdown
-    let md = "";
+    let md = 
+`!! NOTE: These notes were migrated from the old show notes format.
+!! If you make changes here they will be saved with your song but will only be 
+!! visible in this new Show Notes viewer.  In Cantabile's main window you will 
+!! still see your original notes and not any modifications made here.
+
+`;
     for (let n of notes)
     {
         md += `!section `;
@@ -223,8 +262,30 @@ export function migrate(v1raw)
         md += formatColor("fg", "textColor");
         md += formatColor("bg", "backgroundColor");
 
+        if (n.imageFile && n.imageFile != "")
+        {
+            md += `image=\"${n.imageFile.replace(/\\/g, "/")}\" `;
+        }
+
+        if (n.alignment != "Center")
+            md += `align=${n.alignment.toLowerCase()} `;
+        if (n.fontSize != 16)
+            md += `size=${n.fontSize} `;
+        if (n.bold)
+            md += `bold `;
+        if (n.fixedPitch)
+            md += `fixed `;
+
         md += "\n";
+        if (n.fixedPitch)
+            md += "```\n";
         md += n.text;
+        if (n.fixedPitch)
+        {
+            if (!n.text.endsWith("\n"))
+                md += "\n";
+            md += "```";
+        }
         md += "\n";
         md += "!/section\n\n"
 
@@ -232,14 +293,14 @@ export function migrate(v1raw)
         {
             let r = "";
             if (n[field] != "Default")
-                r += `${prefix}=${n[field]} `;
+                r += `${prefix}=${mapColor(n[field])} `;
 
             let otherColors = [... new Set(n.states.map(x => x[field]).filter(x => x !== undefined))];
 
             for (let c of otherColors)
             {
                 let color = c == "Default" ? "" : c;
-                r += `${prefix}(${n.states.filter(s => s[field] === c).map(s => escapeStateName(s.name)).join(",")})=${color} `;
+                r += `${prefix}(${n.states.filter(s => s[field] === c).map(s => escapeStateName(s.name)).join(",")})=${mapColor(color)} `;
             }
 
             return r;
