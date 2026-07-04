@@ -23,11 +23,11 @@ Currently implemented and working:
 * Support for inline ABC music notation
 * Support for inline ChordPro notation
 * Support for PDF files (either individual pages, or entire document)
+* Support for migrating old show notes to new format
 
 TODO:
 
 * Support for embedded variables eg: `$(SongName)`
-* Ability to convert old show notes to new format
 * Ability to auto-scroll based on Cantabile Song state or transport position
 * Editing tools (formatting, insert section, insert image etc...)
 * Integration into Cantabile main application window
@@ -37,7 +37,7 @@ TODO:
 
 To install Show Notes 2:
 
-1. Install the latest build of Cantabile 4.0 (4349 or later)
+1. Install the latest build of Cantabile 4.0 (4350 or later)
     - [download here](https://www.cantabilesoftware.com/download)
 2. Install GhostScript if you need PDF support.
     - [download here](https://ghostscript.com/releases/gsdnld.html)
