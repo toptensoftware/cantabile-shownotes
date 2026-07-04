@@ -136,7 +136,7 @@ eg: to only show a section when the current Cantabile song state is `Chorus1` or
 !section visible(Chorus1,Chorus2)=true
 Let it be, let it be, let it be, let it be
 Whisper words of wisdom, let it be
-!section
+!/section
 ```
 
 eg: to hide a section in all states except "Verse1"
@@ -145,7 +145,7 @@ eg: to hide a section in all states except "Verse1"
 !section visible(Verse1)=false
 Let it be, let it be, let it be, let it be
 Whisper words of wisdom, let it be
-!section
+!/section
 ```
 
 eg: to change the size and color of a section in the "Intro" state:
@@ -153,7 +153,7 @@ eg: to change the size and color of a section in the "Intro" state:
 ```txt
 !section fg(Intro)=orange size(Intro)=24
 This will be colored orange and size 24 but only in when Intro state is active
-!section
+!/section
 ```
 
 ### ABC Music Notation
