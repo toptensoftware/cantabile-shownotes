@@ -35,6 +35,8 @@ TODO:
 
 ## Installation
 
+[Video Walkthrough](https://www.dropbox.com/scl/fi/kd0orqf5xv0rqf9j42jq4/CantabileShowNotes2-setup.mkv?rlkey=smobd7zxgi1uowysjjlmru00g&dl=0)
+
 To install Show Notes 2:
 
 1. Install the latest build of Cantabile 4.0 (4350 or later)
@@ -49,7 +51,10 @@ To install Show Notes 2:
     - To check your resources folder location go to Cantabile -> Tools -> Options -> File Locations -> Resources
 4. Restart Cantabile if already running (note this requires Cantabile Performer, other editions not supported)
 
+
 ## Usage
+
+[Video Walkthrough](https://www.dropbox.com/scl/fi/brirs0bbs111g110ad6fe/CantabileShowNotes2-usage.mkv?rlkey=tt8h1xwa1eg5wb3uitky3fgw2&dl=0)
 
 Show Notes 2 runs externally to Cantabile and uses Cantabile's built-in network server:
 
