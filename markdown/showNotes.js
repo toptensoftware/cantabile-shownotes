@@ -131,6 +131,61 @@ export function parseShowNotes(value, opts)
                     }
                     break;
 
+                case "split":
+                    if (ev.node.args.trim() == "")
+                    {
+                        if (top.kind == 'split')
+                        {
+                            let breakNode = new Node("columnBreak");
+                            replaceNode(ev.node, breakNode);
+                        }
+                        else
+                        {
+                            ev.node.directive = "error"; 
+                            ev.node.args = `Unexpected 'split' directive`;
+                        }
+                    }
+                    else
+                    {
+                        // Create split block
+                        let splitBlock = new Node("split", ev.node.sourcePos);
+                        splitBlock._isContainer = true;
+
+                        // Store split block definition
+                        splitBlock.definition = ev.node.args
+                            .split(" ")
+                            .map(x => {
+                                if (x.match(/^\d+$/))
+                                    return `${x}fr`;
+                                else
+                                    return x;
+                            })
+                            .join(" ");
+
+                        // Put it on the stack
+                        scopes.unshift({
+                            kind: "split",
+                            consumingNode: splitBlock,
+                        });
+
+                        // Add to AST
+                        replaceNode(ev.node, splitBlock);
+                    }
+                    break;
+
+                case "/split":
+                    if (top.kind == 'split')
+                    {
+                        scopes.shift();
+                        ev.node.unlink();
+                    }
+                    else
+                    {
+                        ev.node.directive = "error"; 
+                        ev.node.args = `Unexpected '/split' directive`;
+                    }
+                    break;
+
                 default:
                     if (scopes[0].consumingNode)
                         scopes[0].consumingNode.appendChild(ev.node);
@@ -509,6 +564,32 @@ const knownStates = [${[...this.#codeForStates.keys()].map(s => `"${s}"`).join("
         this.lit(`</div>`)
 
         this.#initCode.push(`loadPdf("${id}", ${JSON.stringify(node.destination)});`)
+    }
+
+    split(node, entering)
+    {
+        if (entering)
+        {
+            this.lit(`<div style="display: grid; grid-template-columns: ${node.definition}">`);
+            this.cr();
+            this.lit(`<div>`);
+            this.cr();
+        }
+        else
+        {
+            this.cr();
+            this.lit("</div>");
+            this.cr();
+            this.lit("</div>");
+        }
+    }
+
+    columnBreak(node)
+    {
+        this.cr();
+        this.lit("</div>");
+        this.cr();
+        this.lit("<div>");
     }
 
     out(input)

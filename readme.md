@@ -30,7 +30,6 @@ TODO:
 
 * Support for auto-scroll based on Cantabile Song state
 * Support for auto-scroll based on transport position
-* Support for column splits
 * Better reporting of syntax/formatting errors
 * Editing tools (formatting, insert section, insert image etc...)
 * Integration into Cantabile's main application window
@@ -254,6 +253,42 @@ To include a specific page, append the page number as a query string:
 ```
 
 See locating asset files below for how PDF files are located.
+
+### Column Splits
+
+Create column splits with the `!split` directive.
+
+eg:
+
+`````
+!split 50 50
+
+Left Column Content
+Goes Here
+
+!split
+
+Right Column Content
+Goes Here
+
+!/split
+`````
+
+* `!split N N` - with column ratios (eg: `50 50`) starts a 
+  column split with that many columns in the ratios specified.
+* `!split` - on its own starts a new column
+* `!/split` - ends the split section
+
+You can also use any standard CSS units on the split declaration. Any
+integer value without a units is automatically converts to `fr` units.
+
+eg: this would create a split with 100px column on the left and
+    the remaining space for the right column and with a 50 pixel
+    gap between the columns
+
+```
+!split 100px 1fr; gap=50px
+```
 
 
 ### Document Settings
