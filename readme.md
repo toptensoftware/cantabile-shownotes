@@ -28,9 +28,12 @@ Currently implemented and working:
 
 TODO:
 
-* Ability to auto-scroll based on Cantabile Song state or transport position
+* Support for auto-scroll based on Cantabile Song state
+* Support for auto-scroll based on transport position
+* Support for column splits
+* Better reporting of syntax/formatting errors
 * Editing tools (formatting, insert section, insert image etc...)
-* Integration into Cantabile main application window
+* Integration into Cantabile's main application window
 
 
 ## Installation
