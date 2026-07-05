@@ -133,6 +133,9 @@ function expandMixedNote(mnote)
         delete s.imageFile;
     }
 
+    if (newNotes.length == 0)
+        return [mnote];
+
     // Return the original note plus any new notes, but only if the
     // original note has at least one visible state
     if (mnote.states.every(x => x.hidden))
@@ -286,22 +289,18 @@ export function migrate(v1raw)
         // Resolve note into a markdown note object with an array of states
         let mnote = resolveNote(showNote, states);
 
-        /*
-        console.log(`----- Show note #${n.id} -----`);
+        console.log(`----- Show note #${mnote.id} -----`);
         console.log(`Resolved:`);
-        console.log(JSON.stringify(n, null, 4));
-        */
+        console.log(JSON.stringify(mnote, null, 4));
 
         // Expand mixed mode notes 
         // (ie: where text and image differ between states)
         let expanded = expandMixedNote(mnote);
         mnotes.push(...expanded);
 
-        /*
         console.log(`Expanded:`);
         console.log(JSON.stringify(expanded, null, 4));
         console.log("\n\n");
-        */
     }
 
     // Remove redundant state fields

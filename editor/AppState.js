@@ -21,3 +21,16 @@ cantabile.on('stateChanged', async () => {
         }
     }
 })
+
+
+let watchers = [];
+window.watchExpression = function(expr, callback)
+{
+    watchers.push(cantabile.variables.watch(`$(${expr})`, callback));
+}
+
+export function clearAllWatchers()
+{
+    watchers.forEach(x => x.unwatch());
+    watchers = [];
+}

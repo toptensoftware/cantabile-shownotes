@@ -1,7 +1,7 @@
 import { Component, css, notify } from "@codeonlyjs/core";
 import { CodeMirrorEditor } from "./CodeMirrorEditor.js";
 import { parseAndRenderShowNotes, migrate } from "@toptensoftware/cantabile-shownotes-markdown";
-import { cantabile } from "./AppState.js";
+import { cantabile, clearAllWatchers } from "./AppState.js";
 import { config } from "./config.js";
 
 export class ShowNotesEditor extends Component
@@ -45,11 +45,11 @@ export class ShowNotesEditor extends Component
             return;
         }
 
+        this.#cleanMigrate = true;
         var v1raw = await cantabile.showNotes.getV1Raw();
-        if (v1raw)
+        if (v1raw && this.#cleanMigrate)
         {
             this.source = migrate(v1raw);
-            this.#cleanMigrate = true;
         }
     }
 
@@ -105,6 +105,9 @@ export class ShowNotesEditor extends Component
 
     render()
     {
+        // Clear previous watches
+        clearAllWatchers();
+
         var r = parseAndRenderShowNotes(this.#source, {
             localAssetPrefix: (config.cantabileHost ?? "") + "/assets/",
         });

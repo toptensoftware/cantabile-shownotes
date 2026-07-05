@@ -12,7 +12,7 @@ export function parseShowNotes(value, opts)
     let walker = ast.walker();
     let ev;
     let scopes = [ { kind: "root" } ];
-    let nextId = 0;
+    let nextSectionId = 0;
     let documentAttributes = [];
     while (ev = walker.next())
     {
@@ -86,7 +86,7 @@ export function parseShowNotes(value, opts)
                     // Construct a section block node
                     let sectionBlock = new Node("section", ev.node.sourcePos);
                     sectionBlock._isContainer = true;
-                    sectionBlock.id = nextId++;
+                    sectionBlock.id = nextSectionId++;
                     sectionBlock.attrs = parseSectionAttributes(ev.node.args);
 
                     // Qualify local image assets
@@ -509,6 +509,60 @@ const knownStates = [${[...this.#codeForStates.keys()].map(s => `"${s}"`).join("
         this.lit(`</div>`)
 
         this.#initCode.push(`loadPdf("${id}", ${JSON.stringify(node.destination)});`)
+    }
+
+    out(input)
+    {    
+        let i = 0;
+        let len = input.length;
+        while (i < len) 
+        {
+            let start = input.indexOf("$(", i);
+
+            if (start === -1) 
+            {
+                // No more expressions — rest is plain text
+                let text = input.slice(i);
+                if (text.length)
+                    super.out(text)
+                break;
+            }
+
+            // Emit the plain text before the expression
+            if (start > i) 
+            {
+                let text = input.slice(i, start);
+                super.out(text);
+            }
+
+            // Find the matching closing paren, respecting nesting
+            let depth = 1;
+            let j = start + 2;
+            while (j < len && depth > 0) {
+                if (input[j] === "(") depth++;
+                else if (input[j] === ")") depth--;
+                j++;
+            }
+
+            if (depth !== 0) 
+            {
+                // Unbalanced — treat the rest as plain text and stop
+                let text = input.slice(start);
+                super.out(text);
+                break;
+            }
+
+            let expr = input.slice(start + 2, j - 1); // inside the parens
+            let id = this.#nextId++;
+            super.lit(`<span id="cb-${id}">$(`);
+            super.out(expr);
+            super.lit(`)</span>`);
+
+            this.#initCode.push(`let el${id} = document.getElementById("cb-${id}");`);
+            this.#initCode.push(`window.watchExpression?.(${JSON.stringify(expr)}, (val) => el${id}.innerText = val);`);
+
+            i = j;
+        }
     }
 
     attrs(node)
