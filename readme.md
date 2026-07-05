@@ -24,10 +24,10 @@ Currently implemented and working:
 * Support for inline ChordPro notation
 * Support for PDF files (either individual pages, or entire document)
 * Support for migrating old show notes to new format
+* Support for embedded variables eg: `$(SongName)`
 
 TODO:
 
-* Support for embedded variables eg: `$(SongName)`
 * Ability to auto-scroll based on Cantabile Song state or transport position
 * Editing tools (formatting, insert section, insert image etc...)
 * Integration into Cantabile main application window
