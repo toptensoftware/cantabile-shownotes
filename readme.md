@@ -25,6 +25,7 @@ Currently implemented and working:
 * Support for PDF files (either individual pages, or entire document)
 * Support for migrating old show notes to new format
 * Support for embedded variables eg: `$(SongName)`
+* Support for column splits
 
 TODO:
 
