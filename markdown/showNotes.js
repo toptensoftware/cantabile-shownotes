@@ -306,9 +306,11 @@ export class ShowNotesHtmlRenderer extends HtmlRenderer
     #initCode = [];
     #needAbc = false;
     #needChordSheet = false;
+    #needMusicXML = false;
 
     get needsAbc() { return this.#needAbc; }
     get needsChordSheet() { return this.#needChordSheet; }
+    get needsMusicXML() { return this.#needMusicXML; }
 
     renderScript()
     {
@@ -552,6 +554,19 @@ const knownStates = [${[...this.#codeForStates.keys()].map(s => `"${s}"`).join("
             this.#needChordSheet = true;
             return;
         }
+        else if (info_words[0] == "musicxml")
+        {
+            // Allocate id
+            let id = `cb-${this.#nextId++}`;
+
+            // Create a div
+            this.lit(`<div id="${id}"></div>`);
+
+            // Add a script to render the abc notation in this block
+            this.#initCode.push(`renderMusicXML("${id}", ${JSON.stringify(node.literal)});`);
+            this.#needMusicXML = true;
+            return;
+        }
 
         super.code_block(node);
     }
@@ -679,6 +694,7 @@ export function renderShowNotes(ast, opts)
         script: renderer.renderScript(),
         needsAbc: renderer.needsAbc,
         needsChordSheet: renderer.needsChordSheet,
+        needsMusicXML: renderer.needsMusicXML,
     }
 }
 
@@ -824,6 +840,19 @@ function init()
             }
 
             window.loadPdf = loadPdf;
+
+            window.renderMusicXML = function renderMusicXML(id, src)
+            {
+                let osmd = new opensheetmusicdisplay.OpenSheetMusicDisplay(id);
+                osmd.setOptions({
+                    backend: "svg",
+                    drawTitle: true,
+                    // drawingParameters: "compacttight" // don't display title, composer etc., smaller margins
+                });
+                osmd
+                    .load(src)
+                    .then(() => osmd.render());
+            }
         }
     }
     catch (err)
