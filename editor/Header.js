@@ -1,5 +1,6 @@
 import { Component, css, html, notify } from "@codeonlyjs/core";
 import { cantabile } from "./AppState.js";
+import { stylish } from "@codeonlyjs/stylish";
 
 // The main header
 export class Header extends Component
@@ -61,14 +62,9 @@ export class Header extends Component
                     },
                     {
                         type: "input type=checkbox .theme-switch",
-                        on_click: () => window.stylish.toggleTheme(),
+                        checked: () => stylish.darkMode ? "" : undefined,
+                        on_click: () => stylish.toggleTheme(),
                     },
-                    {
-                        // Initialize the state of the theme-switch.
-                        // We do this as early as possible to prevent it flicking on/off as page hydrates.
-                        type: "script",
-                        text: html(`document.querySelector(".theme-switch").checked = window.stylish.darkMode;`),
-                    }                    
                 ]
             }
         ]

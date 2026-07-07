@@ -3,12 +3,15 @@ import { rollupPluginHTML as html } from '@web/rollup-plugin-html';
 import resolve from '@rollup/plugin-node-resolve';
 import commonjs from '@rollup/plugin-commonjs';
 import terser from '@rollup/plugin-terser';
-import copy from 'rollup-plugin-copy';
+import { copy } from '@web/rollup-plugin-copy';
 import replace from '@rollup/plugin-replace';
 import { readFileSync } from 'fs';
 
 const pkg = JSON.parse(readFileSync('./package.json', 'utf8'));
 
+// Remap any direct /module urls to /node_modules 
+const rawHtml = readFileSync("./index.html", "utf8");
+const mappedHtml = rawHtml.replace(/\/modules/g, "/../node_modules/");
 
 export default {
   input: './index.html',
@@ -21,7 +24,9 @@ export default {
   },
   plugins: [
     html({
+      input: { html: mappedHtml, name: 'index.html' },
       rootDir: '.',
+      publicPath: '/',
     }),
     resolve({ 
       preferBuiltins: false,
@@ -33,10 +38,8 @@ export default {
     }),
     commonjs(),
     terser(),
-    copy({
-      targets: [
-        { src: './public/**/*', dest: 'dist/public' },
-      ]
-    })
+    copy({ 
+      patterns: './public/**/*' 
+    }),
   ],
 };

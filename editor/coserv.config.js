@@ -5,6 +5,7 @@ const pkg = JSON.parse(readFileSync('./package.json', 'utf8'));
 const config = {
     development: {
         modules: [
+            "*",
         ],
         replace: [
             { from: "./Main.js", to: "/Main.js", contentType: "text/html" },

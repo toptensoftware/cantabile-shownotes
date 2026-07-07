@@ -6,6 +6,7 @@ import { indentMore, indentLess } from "@codemirror/commands";
 import { markdown } from "@codemirror/lang-markdown";
 import { HighlightStyle, syntaxHighlighting, indentUnit, syntaxTree } from "@codemirror/language";
 import { tags, Tag } from "@lezer/highlight";
+import { stylish } from "@codeonlyjs/stylish";
 
 // ---------------------------------------------------------------------------
 // Whitespace visualisation
@@ -243,6 +244,17 @@ function smartTab({ state, dispatch })
 
 export class CodeMirrorEditor extends Component
 {
+    constructor()
+    {
+        super();
+
+        this.listen(stylish, "darkModeChanged", (e) => {
+            this.#editorView?.dispatch({
+                effects: this.#themeCompartment.reconfigure(makeThemeExtensions(e.darkMode)),
+            });
+        });
+    }
+
     #value              = "";
     #editorView         = null;
     #themeCompartment   = new Compartment();
@@ -266,15 +278,6 @@ export class CodeMirrorEditor extends Component
 
     onMount()
     {
-        if (window.stylish)
-        {
-            this.listen(window.stylish, "darkModeChanged", (e) => {
-                this.#editorView?.dispatch({
-                    effects: this.#themeCompartment.reconfigure(makeThemeExtensions(e.darkMode)),
-                });
-            });
-        }
-
         this.#mountEditor(this.containerEl);
     }
 
@@ -286,7 +289,7 @@ export class CodeMirrorEditor extends Component
 
     #mountEditor(el)
     {
-        const isDark = window.stylish?.darkMode ?? false;
+        const isDark = stylish?.darkMode ?? false;
         this.#editorView = new EditorView({
             state: EditorState.create({
                 doc: this.#value,
