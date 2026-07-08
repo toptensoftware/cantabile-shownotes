@@ -21,12 +21,11 @@ export default {
     entryFileNames: 'assets/[name]-[hash].js',
     chunkFileNames: 'assets/[name]-[hash].js',
     assetFileNames: 'assets/[name]-[hash][extname]',
-  },
+  },  
   plugins: [
     html({
       input: { html: mappedHtml, name: 'index.html' },
       rootDir: '.',
-      publicPath: '/',
     }),
     resolve({ 
       preferBuiltins: false,
@@ -39,7 +38,6 @@ export default {
     commonjs(),
     terser(),
     copy({ 
-      patterns: './public/**/*' 
     }),
   ],
 };
