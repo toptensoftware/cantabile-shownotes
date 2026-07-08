@@ -51,7 +51,7 @@ TODO/Suggestions:
 
 To install Show Notes 2:
 
-1. Install the latest build of Cantabile 4.0 (4350 or later)
+1. Install the latest build of Cantabile 4.0 (4352 or later)
     - [download here](https://www.cantabilesoftware.com/download)
 2. Install GhostScript if you need PDF support.
     - [download here](https://ghostscript.com/releases/gsdnld.html)
