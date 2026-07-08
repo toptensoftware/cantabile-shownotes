@@ -289,18 +289,18 @@ export function migrate(v1raw)
         // Resolve note into a markdown note object with an array of states
         let mnote = resolveNote(showNote, states);
 
-        console.log(`----- Show note #${mnote.id} -----`);
-        console.log(`Resolved:`);
-        console.log(JSON.stringify(mnote, null, 4));
+//        console.log(`----- Show note #${mnote.id} -----`);
+//        console.log(`Resolved:`);
+//        console.log(JSON.stringify(mnote, null, 4));
 
         // Expand mixed mode notes 
         // (ie: where text and image differ between states)
         let expanded = expandMixedNote(mnote);
         mnotes.push(...expanded);
 
-        console.log(`Expanded:`);
-        console.log(JSON.stringify(expanded, null, 4));
-        console.log("\n\n");
+//        console.log(`Expanded:`);
+//        console.log(JSON.stringify(expanded, null, 4));
+//        console.log("\n\n");
     }
 
     // Remove redundant state fields

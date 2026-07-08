@@ -4,11 +4,7 @@ var html = parseAndRenderShowNotes(`
 !document width=1000px
 # heading
 
-!split 60 40
-Left Column
-!split
-Right Column
-!/split
+before $(strpart("⚫;🟢⚫🟢;🟢🟢⚫🟢🟢;🟢🟢🟢⚫🟢🟢🟢;🟢🟢🟢🟢⚫🟢🟢🟢🟢;🟢🟢🟢🟢🟢⚫🟢🟢🟢🟢🟢;🟢🟢🟢🟢🟢🟢⚫🟢🟢🟢🟢🟢🟢;🟡🟢🟢🟢🟢🟢🟢⚫🟢🟢🟢🟢🟢🟢🟡;🟡🟡🟢🟢🟢🟢🟢🟢⚫🟢🟢🟢🟢🟢🟢🟡🟡;🟡🟡🟡🟢🟢🟢🟢🟢🟢⚫🟢🟢🟢🟢🟢🟢🟡🟡🟡;🔴🟡🟡🟡🟢🟢🟢🟢🟢🟢⚫🟢🟢🟢🟢🟢🟢🟡🟡🟡🔴", cc(7,2) / 12)) after
 
 `)
 console.log(html.html);

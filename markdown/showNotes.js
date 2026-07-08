@@ -63,6 +63,12 @@ export function parseShowNotes(value, opts)
                         pdfNode.destination = dest;
                         replaceNode(ev.node, pdfNode);
                     }
+                    else if (urlPath.endsWith(".musicxml") || urlPath.endsWith(".mxl"))
+                    {
+                        let mxlNode = new Node("musicxml");
+                        mxlNode.destination = dest;
+                        replaceNode(ev.node, mxlNode);
+                    }
                     else
                     {
                         // Create an image tag
@@ -581,6 +587,16 @@ const knownStates = [${[...this.#codeForStates.keys()].map(s => `"${s}"`).join("
         this.#initCode.push(`loadPdf("${id}", ${JSON.stringify(node.destination)});`)
     }
 
+    musicxml(node)
+    {
+        // Allocate id
+        let id = `cb-${this.#nextId++}`;
+        this.lit(`<div class="musicxml-container" id="${id}">\n`);
+        this.lit(`</div>`)
+
+        this.#initCode.push(`loadMusicXML("${id}", ${JSON.stringify(node.destination)});`)
+    }
+
     split(node, entering)
     {
         if (entering)
@@ -607,58 +623,85 @@ const knownStates = [${[...this.#codeForStates.keys()].map(s => `"${s}"`).join("
         this.lit("<div>");
     }
 
-    out(input)
-    {    
+    #pendingText = "";
+
+    #flushPendingText()
+    {
+        let str = this.#pendingText;
+        this.#pendingText = "";
+
         let i = 0;
-        let len = input.length;
+        let len = str.length;
         while (i < len) 
         {
-            let start = input.indexOf("$(", i);
+            let start = str.indexOf("$(", i);
 
             if (start === -1) 
             {
                 // No more expressions — rest is plain text
-                let text = input.slice(i);
+                let text = str.slice(i);
                 if (text.length)
-                    super.out(text)
+                    this.buffer += this.esc(text);
                 break;
             }
 
             // Emit the plain text before the expression
             if (start > i) 
             {
-                let text = input.slice(i, start);
-                super.out(text);
+                let text = str.slice(i, start);
+                this.buffer += this.esc(text);
             }
 
             // Find the matching closing paren, respecting nesting
             let depth = 1;
             let j = start + 2;
             while (j < len && depth > 0) {
-                if (input[j] === "(") depth++;
-                else if (input[j] === ")") depth--;
+                if (str[j] === "(") depth++;
+                else if (str[j] === ")") depth--;
                 j++;
             }
 
             if (depth !== 0) 
             {
                 // Unbalanced — treat the rest as plain text and stop
-                let text = input.slice(start);
-                super.out(text);
+                let text = str.slice(start);
+                this.buffer += this.esc(text);
                 break;
             }
 
-            let expr = input.slice(start + 2, j - 1); // inside the parens
+            let expr = str.slice(start + 2, j - 1); // inside the parens
             let id = this.#nextId++;
-            super.lit(`<span id="cb-${id}">$(`);
-            super.out(expr);
-            super.lit(`)</span>`);
+            this.buffer += `<span id="cb-${id}">$(`;
+            this.buffer += this.esc(expr);
+            this.buffer += `)</span>`;
 
             this.#initCode.push(`let el${id} = document.getElementById("cb-${id}");`);
             this.#initCode.push(`window.watchExpression?.(${JSON.stringify(expr)}, (val) => el${id}.innerText = val);`);
 
             i = j;
         }
+    }
+
+    lit(str)
+    {
+        this.#flushPendingText();
+        this.buffer += str;
+    }
+
+    cr()
+    {
+        this.#flushPendingText();
+        if (!this.buffer.endsWith("\n"))
+            this.lit("\n");
+    }
+
+    out(str)
+    {
+        // Sometimes commonmark splits consecutive text into multiple nodes.  eg: on "quotes"
+        // Since the breaks our expression parsing, we need to accumulate all consecutive text nodes
+        // and then scan for pattern strings once accumulated.
+        // Just store for now
+        this.#pendingText += str;
     }
 
     attrs(node)
@@ -766,6 +809,42 @@ async function loadPdf(id, url)
     }
 }
 
+async function loadMusicXML(id, url)
+{
+    let el = document.getElementById(id);
+    try
+    {
+        // Get PDF info
+        let response = await fetch(url);
+        if (!response.ok) 
+            throw new Error(`Failed to fetch musicxml file: ${response.status} ${response.statusText} for ${url}`);
+
+        // Get JSON
+        let content;
+        if (url.endsWith(".mxl"))
+            content = new Blob([await response.arrayBuffer()], { type: "application/vnd.recordare.musicxml" });
+        else
+            content = await response.text();
+
+        let osmd = new opensheetmusicdisplay.OpenSheetMusicDisplay(id);
+        osmd.setOptions({
+            backend: "svg",
+            drawTitle: true,
+            // drawingParameters: "compacttight" // don't display title, composer etc., smaller margins
+        });
+        console.log(content.constructor.name, content.byteLength ?? content.length);
+        osmd
+            .load(content)
+            .then(() => osmd.render());
+    }
+    catch (err)
+    {
+        console.log(err.message);
+    }
+}
+
+
+
 function init()
 {
     try
@@ -840,6 +919,7 @@ function init()
             }
 
             window.loadPdf = loadPdf;
+            window.loadMusicXML = loadMusicXML;
 
             window.renderMusicXML = function renderMusicXML(id, src)
             {

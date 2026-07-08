@@ -22,18 +22,27 @@ Currently implemented and working:
 * Conditional sections of the document based on the selected Cantabile Song State.
 * Support for inline ABC music notation
 * Support for inline ChordPro notation
+* Support for MusicXML
 * Support for PDF files (either individual pages, or entire document)
 * Support for migrating old show notes to new format
 * Support for embedded variables eg: `$(SongName)`
 * Support for column splits
 
-TODO:
+TODO/Suggestions:
 
-* Support for auto-scroll based on Cantabile Song state
-* Support for auto-scroll based on transport position
-* Better reporting of syntax/formatting errors
-* Editing tools (formatting, insert section, insert image etc...)
-* Integration into Cantabile's main application window
+* ability to !include chord and abc formats
+* auto-scroll based on Cantabile Song state
+* auto-scroll based on transport position
+* multiple notes documents
+* mulitple views on a single notes document
+* conditional inclusion based on expression (as opposed to state)
+* show note bindings for remote scrolling
+* ability to insert named anchor points that bindings can scroll to
+* a directive to set default PDF resolution
+* error, info, warning and message directives
+* better reporting of syntax/formatting errors
+* editing tools (formatting, insert section, insert image etc...)
+* integration into Cantabile's main application window
 
 
 ## Installation
@@ -220,6 +229,35 @@ Let it [Am]be, let it [C/G]be, let it [F]be, let it [C]be
 See [ChordPro](https://www.chordpro.org/) website for more.
 
 
+### MusicXML Support
+
+Show notes can render `.musicxml` and `.mxl` files with `!include`
+
+```
+!include my-score.musicxml
+```
+
+or
+
+```
+!include my-score.mxl
+```
+
+You can also use fenced code blocks for musicxml however this tends to be very verbose and not recommended:
+
+`````
+```musicxml
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE score-partwise PUBLIC "-//Recordare//DTD MusicXML 4.0 Partwise//EN" "http://www.musicxml.org/dtds/partwise.dtd">
+<score-partwise version="4.0">
+  <movement-title>Prelude to a Tragedy</movement-title>
+  etc...
+  etc...
+  etc...
+```
+`````
+
+
 ### Image Includes
 
 Images can be included using standard Markdown syntax:
@@ -254,6 +292,9 @@ To include a specific page, append the page number as a query string:
 ```
 
 See locating asset files below for how PDF files are located.
+
+
+
 
 ### Column Splits
 
