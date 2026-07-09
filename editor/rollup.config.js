@@ -38,6 +38,9 @@ export default {
     commonjs(),
     terser(),
     copy({ 
+      patterns: [
+        "./public/logo.svg"
+      ]
     }),
   ],
 };
