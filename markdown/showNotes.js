@@ -704,6 +704,12 @@ const knownStates = [${[...this.#codeForStates.keys()].map(s => `"${s}"`).join("
         this.#pendingText += str;
     }
 
+    tag()
+    {
+        this.#flushPendingText();
+        super.tag(...arguments);
+    }
+
     attrs(node)
     {
         // Apply default attributes

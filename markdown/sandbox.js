@@ -1,11 +1,7 @@
 import { parseAndRenderShowNotes } from "./showNotes.js";
 
 var html = parseAndRenderShowNotes(`
-!document width=1000px
-# heading
-
-before $(strpart("⚫;🟢⚫🟢;🟢🟢⚫🟢🟢;🟢🟢🟢⚫🟢🟢🟢;🟢🟢🟢🟢⚫🟢🟢🟢🟢;🟢🟢🟢🟢🟢⚫🟢🟢🟢🟢🟢;🟢🟢🟢🟢🟢🟢⚫🟢🟢🟢🟢🟢🟢;🟡🟢🟢🟢🟢🟢🟢⚫🟢🟢🟢🟢🟢🟢🟡;🟡🟡🟢🟢🟢🟢🟢🟢⚫🟢🟢🟢🟢🟢🟢🟡🟡;🟡🟡🟡🟢🟢🟢🟢🟢🟢⚫🟢🟢🟢🟢🟢🟢🟡🟡🟡;🔴🟡🟡🟡🟢🟢🟢🟢🟢🟢⚫🟢🟢🟢🟢🟢🟢🟡🟡🟡🔴", cc(7,2) / 12)) after
-
+This should be **bold** ok?
 `)
 console.log(html.html);
 console.log(html.script);
