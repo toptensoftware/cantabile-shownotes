@@ -30,6 +30,7 @@ Currently implemented and working:
 
 TODO/Suggestions:
 
+* ability to change placement of text editor
 * ability to !include chord and abc formats
 * auto-scroll based on Cantabile Song state
 * auto-scroll based on transport position
