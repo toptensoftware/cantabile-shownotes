@@ -44,6 +44,7 @@ TODO/Suggestions:
 * better reporting of syntax/formatting errors
 * editing tools (formatting, insert section, insert image etc...)
 * integration into Cantabile's main application window
+* ability to preview the show notes of the next state (see here)[https://community.cantabilesoftware.com/t/show-notes-update-very-very-very-early-sneak-peak/11832/73)
 
 
 ## Installation
