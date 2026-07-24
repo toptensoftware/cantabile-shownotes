@@ -345,6 +345,11 @@ You can insert custom CSS styling using a `<style>` block
 </style>
 ```
 
+Or, you can use `!include` to reference a style sheet stored your assets search path:
+
+```txt
+!include my-styles.css
+```
 
 To set a CSS class `my-class` on a section use period name + class name notation:
 

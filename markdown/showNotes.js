@@ -30,6 +30,12 @@ export function parseShowNotes(value, opts)
             ev.node.destination = qualifyLocalAsset(ev.node.destination);
         }
 
+        if (ev.entering && ev.node.type == "stylesheet")
+        {
+            // Qualify local assets
+            ev.node.destination = qualifyLocalAsset(ev.node.destination);
+        }
+
         if (ev.node.type == "directive")
         {
             if (ev.node.directive.startsWith("!"))
@@ -59,15 +65,21 @@ export function parseShowNotes(value, opts)
                     let query = new URLSearchParams(urlParts[1]);
                     if (urlPath.endsWith(".pdf") && !query.get("page"))
                     {
-                        let pdfNode = new Node("pdf");
+                        let pdfNode = new Node("pdf", ev.node.sourcePos);
                         pdfNode.destination = dest;
                         replaceNode(ev.node, pdfNode);
                     }
                     else if (urlPath.endsWith(".musicxml") || urlPath.endsWith(".mxl"))
                     {
-                        let mxlNode = new Node("musicxml");
+                        let mxlNode = new Node("musicxml", ev.node.sourcePos);
                         mxlNode.destination = dest;
                         replaceNode(ev.node, mxlNode);
+                    }
+                    else if (urlPath.endsWith(".css"))
+                    {
+                        let styleNode = new Node("stylesheet", ev.node.sourcePos);
+                        styleNode.destination = dest;
+                        replaceNode(ev.node, styleNode);
                     }
                     else
                     {
@@ -648,6 +660,13 @@ const knownStates = [${[...this.#codeForStates.keys()].map(s => `"${s}"`).join("
         this.lit(`</div>`)
 
         this.#initCode.push(`loadMusicXML("${id}", ${JSON.stringify(node.destination)});`)
+    }
+
+    stylesheet(node)
+    {
+        this.cr();
+        this.lit(`<link href="${node.destination}?v=${Date.now()}" type="text/css" rel="stylesheet">`);
+        this.cr();
     }
 
     split(node, entering)
