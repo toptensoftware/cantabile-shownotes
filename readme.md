@@ -126,6 +126,8 @@ eg:
 !/section
 ```
 
+
+
 ### Nested Sections
 
 Sections can be nested:
@@ -296,8 +298,6 @@ To include a specific page, append the page number as a query string:
 See locating asset files below for how PDF files are located.
 
 
-
-
 ### Column Splits
 
 Create column splits with the `!split` directive.
@@ -333,6 +333,33 @@ eg: this would create a split with 100px column on the left and
 ```
 !split 100px 1fr; gap=50px
 ```
+
+### CSS Styles and Classes
+
+You can insert custom CSS styling using a `<style>` block
+
+```html
+<style>
+.verse { .lyrics { color: red } }
+.chorus { .lyrics { color: lime } }
+</style>
+```
+
+
+To set a CSS class `my-class` on a section use period name + class name notation:
+
+````
+!section .my-class
+````
+
+Similarly for for chord and ABC notation blocks: 
+
+````
+```chordpro .chorus
+Let it [Am]be, let it [C/G]be, let it [F]be, let it [C]be
+[C]Whisper words of [G]wisdom, let it [F]be [C/E] [Dm] [C]
+```
+````
 
 
 ### Document Settings
