@@ -1,12 +1,27 @@
 import { Component, css } from "@codeonlyjs/core";
-import { basicSetup } from "codemirror";
-import { EditorView, keymap, ViewPlugin, Decoration } from "@codemirror/view";
-import { EditorState, Compartment, RangeSetBuilder } from "@codemirror/state";
-import { indentMore, indentLess } from "@codemirror/commands";
-import { markdown } from "@codemirror/lang-markdown";
-import { HighlightStyle, syntaxHighlighting, indentUnit, syntaxTree } from "@codemirror/language";
-import { tags, Tag } from "@lezer/highlight";
 import { stylish } from "@codeonlyjs/stylish";
+
+// Lot's of codemirrot stuff!
+import { 
+    EditorView, keymap, ViewPlugin, Decoration,
+    lineNumbers, highlightActiveLineGutter, highlightSpecialChars,
+    drawSelection, dropCursor, rectangularSelection, crosshairCursor,
+    highlightActiveLine, 
+} from "@codemirror/view";
+import { EditorState, Compartment, RangeSetBuilder } from "@codemirror/state";
+import { 
+    indentMore, indentLess, history, defaultKeymap, historyKeymap 
+} from "@codemirror/commands";
+import { searchKeymap } from "@codemirror/search";
+import { markdown } from "@codemirror/lang-markdown";
+import { 
+    HighlightStyle, syntaxHighlighting, indentUnit, syntaxTree,
+    foldGutter, indentOnInput, bracketMatching,  defaultHighlightStyle 
+} from "@codemirror/language";
+import { closeBrackets, closeBracketsKeymap } from "@codemirror/autocomplete"
+import { tags, Tag } from "@lezer/highlight";
+
+
 
 // ---------------------------------------------------------------------------
 // Whitespace visualisation
@@ -294,7 +309,24 @@ export class CodeMirrorEditor extends Component
             state: EditorState.create({
                 doc: this.#value,
                 extensions: [
-                    basicSetup,
+                    // Standard extensions
+                    lineNumbers(),
+                    highlightActiveLineGutter(),
+                    history(),
+                    foldGutter(),
+                    drawSelection(),
+                    dropCursor(),
+                    EditorState.allowMultipleSelections.of(true),
+                    indentOnInput(),
+                    syntaxHighlighting(defaultHighlightStyle, { fallback: true }),
+                    bracketMatching(),
+                    closeBrackets(),
+                    rectangularSelection(),
+                    crosshairCursor(),
+                    highlightActiveLine(),
+                    keymap.of([...closeBracketsKeymap, ...defaultKeymap, ...historyKeymap, ...searchKeymap]),
+
+                    // Customizations
                     indentUnit.of("    "),
                     keymap.of([{ key: "Tab", run: smartTab }, { key: "Shift-Tab", run: indentLess }]),
                     showWhitespace,
@@ -302,6 +334,8 @@ export class CodeMirrorEditor extends Component
                     commentLinkClickHandler,
                     markdown({ extensions: [directiveExtension] }),
                     this.#themeCompartment.of(makeThemeExtensions(isDark)),
+
+                    // Event listener
                     EditorView.updateListener.of(update => {
                         if (update.docChanged)
                         {
