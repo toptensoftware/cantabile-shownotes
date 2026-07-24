@@ -2,6 +2,11 @@ import { parseAndRenderShowNotes } from "./showNotes.js";
 
 var html = parseAndRenderShowNotes(`
 This should be **bold** ok?
+
+!section .myclass(s1)
+Text
+!/section
+
 `)
 console.log(html.html);
 console.log(html.script);

@@ -10,7 +10,7 @@ export function parseSectionAttributes(input)
 
     function parseName() {
         const start = i;
-        while (i < input.length && /[a-zA-Z0-9_-]/.test(input[i])) i++;
+        while (i < input.length && /[a-zA-Z0-9\._-]/.test(input[i])) i++;
         return input.slice(start, i);
     }
 

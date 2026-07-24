@@ -295,7 +295,10 @@ function attributeToStyle(attr)
             return null;
 
         default:
-            return { name: attr.name, value: attr.value };
+            if (attr.name.startsWith("."))
+                return { name: attr.name, value : attr.value !== 'false' };
+            else
+                return { name: attr.name, value: attr.value };
     }
 }
 
@@ -390,7 +393,8 @@ const knownStates = [${[...this.#codeForStates.keys()].map(s => `"${s}"`).join("
         if (entering)
         {
             // Resolve default styles
-            let styles = "";
+            let styles = [];
+            let classes = [ 'section' ];
             let defaultStyles = new Map();
             let resetWritten = new Map();
             for (let attr of node.attrs)
@@ -402,8 +406,18 @@ const knownStates = [${[...this.#codeForStates.keys()].map(s => `"${s}"`).join("
                     let style = attributeToStyle(attr);
                     if (style)
                     {
-                        // Add to HTML
-                        styles += `${style.name}: ${style.value}; `;
+                        if (style.name.startsWith("."))
+                        {
+                            if (style.value)
+                            {
+                                classes.push(style.name.substring(1));
+                            }
+                        }
+                        else
+                        {
+                            // Add to HTML
+                            styles.push(`${style.name}: ${style.value};`);
+                        }
 
                         // Store in case we need to reset it
                         defaultStyles.set(style.name,  style.value);
@@ -429,13 +443,27 @@ const knownStates = [${[...this.#codeForStates.keys()].map(s => `"${s}"`).join("
                         let defStyle = defaultStyles.get(style.name);
                         if (!defStyle)
                         {
-                            // No default style, so reset by clearing the value
-                            this.#resetCode.push(`sections[${node.id}].style.${cssToCamelCase(style.name)} = '';`);
+                            if (attr.name.startsWith("."))
+                            {
+                                this.#resetCode.push(`sections[${node.id}].classList.remove(${JSON.stringify(attr.name.substring(1))});`);
+                            }
+                            else
+                            {
+                                // No default style, so reset by clearing the value
+                                this.#resetCode.push(`sections[${node.id}].style.${cssToCamelCase(style.name)} = '';`);
+                            }
                         }
                         else
                         {
-                            // Reset to default style
-                            this.#resetCode.push(`sections[${node.id}].style.${cssToCamelCase(style.name)} = '${defStyle}';`);
+                            if (attr.name.startsWith("."))
+                            {
+                                this.#resetCode.push(`sections[${node.id}].classList.${(attr.value ? "add" : "remove")}(${JSON.stringify(attr.name.substring(1))});`);
+                            }
+                            else
+                            {
+                                // Reset to default style
+                                this.#resetCode.push(`sections[${node.id}].style.${cssToCamelCase(style.name)} = '${defStyle}';`);
+                            }
                         }
 
                         // Remember that we've written reset code for this style so we don't write it again for other states
@@ -452,14 +480,23 @@ const knownStates = [${[...this.#codeForStates.keys()].map(s => `"${s}"`).join("
                             this.#codeForStates.set(state, code);
                         }
 
-                        code.push(`sections[${node.id}].style.${cssToCamelCase(style.name)} = '${style.value ?? ''}';`);
+                        if (style.name.startsWith("."))
+                        {
+                            code.push(`sections[${node.id}].classList.${(style.value ? "add" : "remove")}(${JSON.stringify(style.name.substring(1))});`);
+                        }
+                        else
+                        {
+                            code.push(`sections[${node.id}].style.${cssToCamelCase(style.name)} = '${style.value ?? ''}';`);
+                        }
                     }
                 }
             }
 
             // Generate HTML for this section
             this.cr();
-            this.lit(`\n<div class='section' id='section-${node.id}' style='${styles}'>`);
+            let classDecl = classes.length ? ` class="${classes.join(" ")}"` : "";
+            let styleDecl = styles.length ? ` style="${styles.join("; ")}"` : "";
+            this.lit(`\n<div id='section-${node.id}'${classDecl}${styleDecl}>`);
 
             // Layer text over background image
             let imageAttr = node.attrs.find(x => x.name == "image" && !x.args && x.value.trim() != "");
@@ -505,13 +542,16 @@ const knownStates = [${[...this.#codeForStates.keys()].map(s => `"${s}"`).join("
     code_block(node)
     {
         let info_words = node.info ? node.info.split(/\s+/) : [];
+        let css_classes = info_words.filter(x => x.startsWith(".")).map(x => x.substring(1));
+        let classes = css_classes.length == 0 ? "" : ` class="${css_classes.join(" ")}"`;
+        info_words = info_words.filter(x => !x.startsWith("."));
         if (info_words[0] == "abc")
         {
             // Allocate id
             let id = `cb-${this.#nextId++}`;
 
             // Create a div
-            this.lit(`<div id="${id}"></div>`);
+            this.lit(`<div id="${id}"${classes}></div>`);
 
             // Add a script to render the abc notation in this block
             this.#initCode.push(`ABCJS.renderAbc("${id}", ${JSON.stringify(node.literal)});`);
@@ -525,7 +565,7 @@ const knownStates = [${[...this.#codeForStates.keys()].map(s => `"${s}"`).join("
             let id = `cb-${this.#nextId++}`;
 
             // Create a div
-            this.lit(`<div id="${id}"></div>`);
+            this.lit(`<div id="${id}"${classes}></div>`);
 
             // Add a script to render the abc notation in this block
             this.#initCode.push(`renderChordSheet("${id}", ChordSheetJS.ChordsOverWordsParser, ${JSON.stringify(node.literal)});`);
@@ -539,7 +579,7 @@ const knownStates = [${[...this.#codeForStates.keys()].map(s => `"${s}"`).join("
             let id = `cb-${this.#nextId++}`;
 
             // Create a div
-            this.lit(`<div id="${id}"></div>`);
+            this.lit(`<div id="${id}"${classes}></div>`);
 
             // Add a script to render the abc notation in this block
             this.#initCode.push(`renderChordSheet("${id}", ChordSheetJS.ChordProParser, ${JSON.stringify(node.literal)});`);
@@ -553,7 +593,7 @@ const knownStates = [${[...this.#codeForStates.keys()].map(s => `"${s}"`).join("
             let id = `cb-${this.#nextId++}`;
 
             // Create a div
-            this.lit(`<div id="${id}"></div>`);
+            this.lit(`<div id="${id}"${classes}></div>`);
 
             // Add a script to render the abc notation in this block
             this.#initCode.push(`renderChordSheet("${id}", ChordSheetJS.UltimateGuitarParser, ${JSON.stringify(node.literal)});`);
@@ -566,7 +606,7 @@ const knownStates = [${[...this.#codeForStates.keys()].map(s => `"${s}"`).join("
             let id = `cb-${this.#nextId++}`;
 
             // Create a div
-            this.lit(`<div id="${id}"></div>`);
+            this.lit(`<div id="${id}"${classes}></div>`);
 
             // Add a script to render the abc notation in this block
             this.#initCode.push(`renderMusicXML("${id}", ${JSON.stringify(node.literal)});`);
@@ -574,7 +614,20 @@ const knownStates = [${[...this.#codeForStates.keys()].map(s => `"${s}"`).join("
             return;
         }
 
-        super.code_block(node);
+        if (info_words.length > 0 && info_words[0].length > 0) {
+            css_classes.push("language-" + this.esc(info_words[0]));
+        }
+
+        let attrs = this.attrs(node);
+        if (css_classes.length > 0)
+            attrs.push(["class", css_classes.join(" ")]);
+        this.cr();
+        this.tag("pre");
+        this.tag("code", attrs);
+        this.out(node.literal);
+        this.tag("/code");
+        this.tag("/pre");
+        this.cr();
     }
 
     pdf(node)
