@@ -1,7 +1,7 @@
 import { Component, css, notify } from "@codeonlyjs/core";
 import { CodeMirrorEditor } from "./CodeMirrorEditor.js";
 import { parseAndRenderShowNotes, migrate } from "@toptensoftware/cantabile-shownotes-markdown";
-import { cantabile, clearAllWatchers } from "./AppState.js";
+import { cantabile, clearAllWatchers, getActiveDocument } from "./AppState.js";
 import { config } from "./config.js";
 
 export class ShowNotesEditor extends Component
@@ -9,23 +9,28 @@ export class ShowNotesEditor extends Component
     constructor()
     {
         super();
+
+        // Toggle edit mode
         this.listen(notify, "editMode", (event, mode) => {
             this.editMode = mode;
         })
 
-        // Update to show new show notes
-        this.listen(cantabile.showNotes, 'markdownChanged', () => {
-            this.loadNotesFromSong();
+        // Load other document on document change
+        this.listen(notify, "documentChanged", () => {
+            this.loadShowNotes();
         });
 
-        this.listen(cantabile.showNotes, 'changed', () => {
-            if (this.#cleanMigrate)
-                this.loadNotesFromSong();
-        });
-
-        // Update states
+        // Monitor for state changes and update show notes
+        // based on state
         this.listen(cantabile.songStates, 'currentStateChanged', () => {
             window.setState?.(cantabile.songStates.currentState?.name)
+        });
+
+        // When showing migrated notes monitor for changes and
+        // re-migrate when changed
+        this.listen(cantabile.showNotes, 'changed', () => {
+            if (this.#cleanMigrate)
+                this.migrate();
         });
     }
 
@@ -33,18 +38,44 @@ export class ShowNotesEditor extends Component
 
     onMount()
     {
-        this.loadNotesFromSong();
+        this.loadShowNotes();
     }
 
-    async loadNotesFromSong()
+    #docWatch;
+
+    async loadShowNotes()
     {
-        if (cantabile.showNotes.markdown ?? "" != "")
+        // Get the current document tname
+        let docName = getActiveDocument();
+
+        // Stop watching old document
+        if (this.#docWatch)
         {
-            this.source = cantabile.showNotes.markdown;
-            this.#cleanMigrate = false;
-            return;
+            this.#docWatch.unwatch();
+            this.#docWatch = null;
         }
 
+        if (!docName)
+        {
+            this.#cleanMigrate = true;
+            this.migrate();
+        }
+        else
+        {
+            this.#cleanMigrate = false;
+
+            // Watch the document for changes
+            this.#docWatch = cantabile.documents.watch(docName);
+            this.#docWatch.on("changed", (content) => {
+                this.source = content;
+            });
+            this.source = this.#docWatch.content;
+        }
+    }
+
+    async migrate()
+    {
+        // No existing documents, migrate from v1
         this.#cleanMigrate = true;
         var v1raw = await cantabile.showNotes.getV1Raw();
         if (v1raw && this.#cleanMigrate)
@@ -97,8 +128,13 @@ export class ShowNotesEditor extends Component
         // Save back to Cantabile (coalesc 3 second interval)
         clearTimeout(this.#saveTimeout);
         this.#saveTimeout = setTimeout(() => {
-            cantabile.showNotes.storeMarkdown(this.#source);
-        }, 3000);
+
+            if (this.#docWatch)
+            {
+                this.#docWatch.setContent(this.#source);
+            }
+            this.#saveTimeout = null;
+        }, 1000);
     }
 
     #saveTimeout;

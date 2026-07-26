@@ -1,6 +1,7 @@
 import { Component, css, html, notify } from "@codeonlyjs/core";
-import { cantabile } from "./AppState.js";
 import { stylish } from "@codeonlyjs/stylish";
+import { DocumentPicker } from "./DocumentPicker.js";
+import { cantabile } from "./AppState.js";
 
 // The main header
 export class Header extends Component
@@ -46,6 +47,7 @@ export class Header extends Component
             {
                 type: "div .buttons",
                 $: [
+                    DocumentPicker,
                     {
                         type: "div class='control-group info'",
                         display: () => cantabile.state == "connected",

@@ -1,5 +1,6 @@
 import { Cantabile } from "@toptensoftware/cantabile-js";
 import { config } from "./config.js"
+import { notify } from "@codeonlyjs/core";
 
 export let cantabile = new Cantabile(config.cantabileHost);
 
@@ -34,3 +35,18 @@ export function clearAllWatchers()
     watchers.forEach(x => x.unwatch());
     watchers = [];
 }
+
+export function getActiveDocument()
+{
+    return window.location.hash.slice(1);
+}
+
+export function setActiveDocument(name)
+{
+    window.location.hash = name;
+}
+
+window.addEventListener("hashchange", () => {
+    notify("documentChanged");
+});
+
